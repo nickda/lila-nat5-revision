@@ -1136,6 +1136,14 @@
             font-size: 14px;
             cursor: pointer;
             border: 1px solid #6a4a9a;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .collection-dots {
+            font-size: 8px;
+            letter-spacing: 2px;
+            color: #9a7abf;
         }
 
         .collection-cell.unlocked:hover {
@@ -2157,12 +2165,42 @@
         }
 
         function generateReward(subject) {
-            const member = AESPA_MEMBERS[Math.floor(Math.random() * AESPA_MEMBERS.length)];
-            const memberHooks = REWARD_HOOKS[member]?.[subject] || REWARD_HOOKS[member]?.["Environmental Science"] || ["You are doing amazing."];
-            const hook = memberHooks[Math.floor(Math.random() * memberHooks.length)];
+            // Prefer members with uncollected hooks for this subject
+            const memberScores = AESPA_MEMBERS.map(m => {
+                const hooks = REWARD_HOOKS[m]?.[subject] || [];
+                let uncollected = 0;
+                hooks.forEach((h, i) => {
+                    const key = storage.prefix + 'collection_' + m + '_' + subject + '_' + i;
+                    if (!storage.cache[key] && !localStorage.getItem(key)) uncollected++;
+                });
+                return { member: m, uncollected };
+            });
+
+            // Pick from members with most uncollected; random tiebreak
+            const maxUncollected = Math.max(...memberScores.map(s => s.uncollected));
+            const candidates = maxUncollected > 0
+                ? memberScores.filter(s => s.uncollected === maxUncollected)
+                : memberScores; // all collected, just pick random
+            const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+            const member = chosen.member;
+
+            // Pick an uncollected hook if possible
+            const hooks = REWARD_HOOKS[member]?.[subject] || ["You are doing amazing."];
+            let hookIndex = Math.floor(Math.random() * hooks.length);
+            if (maxUncollected > 0) {
+                const uncollectedIndices = hooks.map((h, i) => {
+                    const key = storage.prefix + 'collection_' + member + '_' + subject + '_' + i;
+                    return (!storage.cache[key] && !localStorage.getItem(key)) ? i : -1;
+                }).filter(i => i >= 0);
+                if (uncollectedIndices.length > 0) {
+                    hookIndex = uncollectedIndices[Math.floor(Math.random() * uncollectedIndices.length)];
+                }
+            }
+
+            const hook = hooks[hookIndex];
             const closer = CLOSERS[Math.floor(Math.random() * CLOSERS.length)];
             const photoIndex = (Math.floor(Math.random() * 6)) + 1;
-            return { member, hook, closer, photoIndex };
+            return { member, hook, closer, photoIndex, hookIndex };
         }
 
         function showReward(subject) {
@@ -2186,10 +2224,10 @@
                 '<span class="reward-hook">' + r.hook + '</span>' +
                 '<span class="reward-closer">' + r.closer + '</span>';
 
-            // Save to collection
-            const collectionKey = storage.prefix + 'collection_' + r.member + '_' + subject;
+            // Save to collection (keyed by member + subject + hookIndex for multiple cards per combo)
+            const collectionKey = storage.prefix + 'collection_' + r.member + '_' + subject + '_' + r.hookIndex;
             if (!storage.cache[collectionKey]) {
-                storage.cache[collectionKey] = JSON.stringify({ member: r.member, subject: subject, hook: r.hook, closer: r.closer, date: new Date().toISOString() });
+                storage.cache[collectionKey] = JSON.stringify({ member: r.member, subject: subject, hook: r.hook, closer: r.closer, hookIndex: r.hookIndex, date: new Date().toISOString() });
                 localStorage.setItem(collectionKey, storage.cache[collectionKey]);
                 storage._firebaseWrite({ [collectionKey]: storage.cache[collectionKey] });
             }
@@ -2223,22 +2261,22 @@
         function renderCollection() {
             const members = ["Karina", "Giselle", "Winter", "NingNing"];
             const subjects = Object.keys(FLASHCARD_DATA.subjects);
+            const maxHooks = 3; // 3 hooks per member/subject
 
             // Count unlocked
             let unlocked = 0;
-            const total = members.length * subjects.length;
-            const collectionData = {};
+            const total = members.length * subjects.length * maxHooks;
+            const cellCounts = {}; // member_subject -> count of collected
 
             members.forEach(m => {
                 subjects.forEach(s => {
-                    const key = storage.prefix + 'collection_' + m + '_' + s;
-                    const val = storage.cache[key] || localStorage.getItem(key);
-                    if (val) {
-                        try {
-                            collectionData[m + '_' + s] = JSON.parse(val);
-                            unlocked++;
-                        } catch (e) { /* skip corrupt entry */ }
+                    let count = 0;
+                    for (let i = 0; i < maxHooks; i++) {
+                        const key = storage.prefix + 'collection_' + m + '_' + s + '_' + i;
+                        const val = storage.cache[key] || localStorage.getItem(key);
+                        if (val) { count++; unlocked++; }
                     }
+                    cellCounts[m + '_' + s] = count;
                 });
             });
 
@@ -2254,9 +2292,10 @@
                 const shortName = s.length > 12 ? s.substring(0, 11) + '...' : s;
                 html += '<div class="collection-subject-label">' + shortName + '</div>';
                 members.forEach(m => {
-                    const data = collectionData[m + '_' + s];
-                    if (data) {
-                        html += '<div class="collection-cell unlocked" onclick="showCollectionDetail(\'' + m + '\', \'' + s.replace(/'/g, "\\'") + '\')">' + m.charAt(0) + '</div>';
+                    const count = cellCounts[m + '_' + s] || 0;
+                    if (count > 0) {
+                        const dots = Array.from({length: maxHooks}, (_, i) => i < count ? '●' : '○').join('');
+                        html += '<div class="collection-cell unlocked" onclick="showCollectionDetail(\'' + m + '\', \'' + s.replace(/'/g, "\\'") + '\')" title="' + count + '/' + maxHooks + '">' + m.charAt(0) + '<div class="collection-dots">' + dots + '</div></div>';
                     } else {
                         html += '<div class="collection-cell locked">?</div>';
                     }
@@ -2279,12 +2318,18 @@
                 return;
             }
 
-            const key = storage.prefix + 'collection_' + member + '_' + subject;
-            const val = storage.cache[key] || localStorage.getItem(key);
-            if (!val) return;
+            // Gather all collected cards for this member/subject
+            const cards = [];
+            for (let i = 0; i < 3; i++) {
+                const key = storage.prefix + 'collection_' + member + '_' + subject + '_' + i;
+                const val = storage.cache[key] || localStorage.getItem(key);
+                if (val) {
+                    try { cards.push(JSON.parse(val)); } catch (e) { /* skip */ }
+                }
+            }
+            if (cards.length === 0) return;
 
-            let data;
-            try { data = JSON.parse(val); } catch (e) { return; }
+            const data = cards[0]; // use first card for photo/header
 
             if (!detail) {
                 detail = document.createElement('div');
@@ -2293,13 +2338,18 @@
                 document.getElementById('collection-grid').after(detail);
             }
 
-            var member = data.member || member;
-            var subject = data.subject || subject;
+            const m = data.member;
+            const s = data.subject;
+            const photoIdx = Math.abs(m.charCodeAt(0) + s.charCodeAt(0)) % 6 + 1;
+            let cardsHtml = cards.map((c, i) =>
+                '<div class="collection-detail-text" style="' + (i > 0 ? 'margin-top: 10px; padding-top: 10px; border-top: 1px solid #4a3a6a;' : '') + '">' + c.hook + ' ' + c.closer + '</div>'
+            ).join('');
+
             detail.innerHTML =
-                '<div class="collection-detail-photo"><img src="photos/aespa-' + (Math.abs(member.charCodeAt(0) + subject.charCodeAt(0)) % 6 + 1) + '.jpg" alt="' + data.member + '" onerror="this.parentElement.innerHTML=\'<div class=reward-photo-fallback>' + data.member.charAt(0) + '</div>\'"></div>' +
-                '<div class="collection-detail-member">' + data.member + '</div>' +
-                '<div class="collection-detail-subject">' + data.subject + '</div>' +
-                '<div class="collection-detail-text">' + data.hook + ' ' + data.closer + '</div>';
+                '<div class="collection-detail-photo"><img src="photos/aespa-' + photoIdx + '.jpg" alt="' + m + '" onerror="this.parentElement.innerHTML=\'<div class=reward-photo-fallback>' + m.charAt(0) + '</div>\'"></div>' +
+                '<div class="collection-detail-member">' + m + '</div>' +
+                '<div class="collection-detail-subject">' + s + ' (' + cards.length + '/3)</div>' +
+                cardsHtml;
             detail.classList.add('show');
             activeCollectionCell = cellKey;
         }
