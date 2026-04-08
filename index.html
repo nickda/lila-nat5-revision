@@ -414,6 +414,8 @@
 
         .card-back {
             display: none;
+            width: 100%;
+            text-align: left;
         }
 
         .flashcard.flipped .card-back {
@@ -1850,6 +1852,8 @@
 
         let currentTab = 'today-view';
         function refreshCurrentView() {
+            // Don't rebuild flashcards during active study (causes index reset / card jump)
+            if (currentTab === 'flashcard-view') return;
             switchTab(currentTab);
         }
 
