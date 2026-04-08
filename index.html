@@ -853,9 +853,71 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #5a6a9a;
         }
+
+        .pin-overlay {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #1a1f3a 0%, #2d3561 100%);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .pin-overlay.hidden { display: none; }
+        .pin-box {
+            text-align: center;
+            padding: 40px;
+        }
+        .pin-box h2 {
+            font-size: 22px;
+            margin-bottom: 8px;
+        }
+        .pin-box p {
+            color: #8a9adb;
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+        .pin-box input {
+            background: #2a3050;
+            border: 2px solid #4a5a8a;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 18px;
+            padding: 12px 16px;
+            text-align: center;
+            width: 220px;
+            outline: none;
+        }
+        .pin-box input:focus { border-color: #6b9eff; }
+        .pin-box button {
+            display: block;
+            margin: 16px auto 0;
+            background: #6b9eff;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 15px;
+            padding: 10px 32px;
+            cursor: pointer;
+        }
+        .pin-box .pin-error {
+            color: #ff6b6b;
+            font-size: 13px;
+            margin-top: 12px;
+            display: none;
+        }
     </style>
 </head>
 <body>
+    <div class="pin-overlay" id="pin-overlay">
+        <div class="pin-box">
+            <h2>Lila's Revision Dashboard</h2>
+            <p>Enter the passphrase to sync your progress</p>
+            <input type="password" id="pin-input" placeholder="passphrase" autocomplete="off">
+            <button onclick="unlockDashboard()">Go</button>
+            <div class="pin-error" id="pin-error">Checking connection...</div>
+        </div>
+    </div>
     <div class="container">
         <header>
             <div class="greeting">Welcome back,</div>
@@ -983,6 +1045,11 @@
             </div>
 
             <div class="modal-section">
+                <label class="modal-label">Sync Passphrase</label>
+                <button class="modal-button" onclick="changePassphrase()">Change Passphrase</button>
+            </div>
+
+            <div class="modal-section">
                 <label class="modal-label">Reset All Progress</label>
                 <button class="modal-button secondary" onclick="resetData()">Clear All Data</button>
             </div>
@@ -1081,21 +1148,53 @@
             appId: "1:724915492986:web:93556f04427005dddf03c3"
         };
 
-        // Unique dashboard ID (keeps data at a known path)
-        const DASHBOARD_ID = "lila-nat5";
-
         let firebaseReady = false;
         let dbRef = null;
+        let firebaseApp = null;
 
-        if (FIREBASE_CONFIG.apiKey !== "PLACEHOLDER") {
-            try {
-                firebase.initializeApp(FIREBASE_CONFIG);
-                dbRef = firebase.database().ref('dashboards/' + DASHBOARD_ID);
-                firebaseReady = true;
-            } catch (e) {
-                console.warn('Firebase init failed, using local storage only', e);
-            }
+        try {
+            firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
+            firebaseReady = true;
+        } catch (e) {
+            console.warn('Firebase init failed, using local storage only', e);
         }
+
+        // Derive a SHA-256 hex hash from the passphrase to use as the database path
+        async function derivePathKey(passphrase) {
+            const encoded = new TextEncoder().encode(passphrase.trim());
+            const hashBuffer = await crypto.subtle.digest('SHA-256', encoded);
+            return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        // Check if passphrase is already stored
+        const storedPin = localStorage.getItem('lila_dash_pin');
+
+        // Hide overlay immediately for returning visitors
+        if (storedPin) {
+            document.getElementById('pin-overlay').classList.add('hidden');
+        }
+
+        async function unlockDashboard() {
+            const input = document.getElementById('pin-input');
+            const passphrase = input.value.trim();
+            if (!passphrase) return;
+            await connectFirebase(passphrase);
+            document.getElementById('pin-overlay').classList.add('hidden');
+        }
+
+        async function connectFirebase(passphrase) {
+            const pathKey = await derivePathKey(passphrase);
+            localStorage.setItem('lila_dash_pin', passphrase);
+            dbRef = firebaseReady ? firebase.database().ref('dashboards/' + pathKey) : null;
+            // Reinitialize storage with Firebase sync
+            storage = new Storage();
+            if (typeof refreshCurrentView === 'function') refreshCurrentView();
+        }
+
+        // Set up enter key on pin input
+        document.getElementById('pin-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') unlockDashboard();
+        });
 
         class Storage {
             constructor() {
@@ -1103,7 +1202,7 @@
                 this.cache = {};
                 this.synced = false;
 
-                if (firebaseReady) {
+                if (firebaseReady && dbRef) {
                     dbRef.on('value', (snap) => {
                         const data = snap.val() || {};
                         this.cache = data;
@@ -1200,7 +1299,13 @@
             }
         }
 
-        const storage = new Storage();
+        // Start with local-only storage; Firebase sync upgrades it after passphrase is resolved
+        let storage = new Storage();
+
+        // If returning visitor, connect Firebase in the background
+        if (storedPin) {
+            connectFirebase(storedPin);
+        }
 
         function updateDate() {
             const now = new Date();
@@ -1689,6 +1794,14 @@
                 alert('Data imported successfully!');
                 location.reload();
             }
+        }
+
+        function changePassphrase() {
+            localStorage.removeItem('lila_dash_pin');
+            document.getElementById('pin-overlay').classList.remove('hidden');
+            document.getElementById('pin-input').value = '';
+            document.getElementById('pin-input').focus();
+            closeModal();
         }
 
         function resetData() {
