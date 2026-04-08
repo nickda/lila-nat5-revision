@@ -216,6 +216,17 @@
         .frequency-medium { color: #ffa500; margin-right: 6px; }
         .frequency-low { color: #8a9adb; margin-right: 6px; }
 
+        .all-done-banner {
+            background: linear-gradient(135deg, #2a5a4a 0%, #1a4a3a 100%);
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+            color: #7aff9a;
+            font-size: 14px;
+            font-weight: 500;
+            margin-top: 12px;
+        }
+
         .study-btn {
             background: #6b9eff;
             color: white;
@@ -1921,12 +1932,58 @@
 
         function renderPriorities() {
             const container = document.getElementById('priorities-container');
-            const priorities = getPriorities(6);
+            const now = new Date();
+            const todayKey = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+            const storageKey = 'lila_daily_priorities_' + todayKey;
 
-            container.innerHTML = priorities.map(p => `
-                <div class="priority-item">
+            // Lock priorities on first visit of the day
+            let priorities;
+            const stored = localStorage.getItem(storageKey);
+            if (stored) {
+                try {
+                    const parsed = JSON.parse(stored);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        // Restore frequency from PAST_PAPER_DATA for rendering
+                        priorities = parsed.map(p => ({
+                            subject: p.subject,
+                            topic: p.topic,
+                            frequency: PAST_PAPER_DATA[p.subject]?.topics?.[p.topic]?.frequency || 'low'
+                        }));
+                    }
+                } catch (e) {
+                    // Corrupted data, regenerate
+                }
+            }
+
+            if (!priorities) {
+                const fresh = getPriorities(6);
+                priorities = fresh;
+                // Store only subject and topic identifiers
+                localStorage.setItem(storageKey, JSON.stringify(fresh.map(p => ({ subject: p.subject, topic: p.topic }))));
+            }
+
+            // Render with done states
+            let allDone = priorities.length > 0;
+            let lastDoneSubject = null;
+
+            container.innerHTML = priorities.map(p => {
+                const lastStudied = storage.getLastStudied(p.subject, p.topic);
+                const doneToday = lastStudied && (now - lastStudied) < (1000 * 60 * 60 * 16);
+
+                if (!doneToday) {
+                    allDone = false;
+                } else {
+                    lastDoneSubject = p.subject;
+                }
+
+                const doneStyle = doneToday ? 'opacity: 0.5; border-left-color: #4a9a5a;' : '';
+                const checkmark = doneToday ? ' ✅' : '';
+                const btnText = doneToday ? 'Done' : 'Study';
+
+                return `
+                <div class="priority-item" style="${doneStyle}">
                     <div class="priority-info">
-                        <div class="priority-topic">${p.topic.replace(/-/g, ' ')}</div>
+                        <div class="priority-topic">${p.topic.replace(/-/g, ' ')}${checkmark}</div>
                         <div class="priority-subject">${p.subject}</div>
                         <div class="priority-meta">
                             <span class="confidence-badge confidence-${storage.getTopicConfidence(p.subject, p.topic)}">${storage.getTopicConfidence(p.subject, p.topic).toUpperCase().replace(/-/g, ' ')}</span>
@@ -1935,9 +1992,22 @@
                             </span>
                         </div>
                     </div>
-                    <button class="study-btn" onclick="studyTopic('${p.subject}', '${p.topic}')">Study</button>
+                    <button class="study-btn" onclick="studyTopic('${p.subject}', '${p.topic}')">${btnText}</button>
                 </div>
-            `).join('');
+            `;
+            }).join('');
+
+            // "All done" banner and KWANGYA reward
+            if (allDone && priorities.length > 0) {
+                container.innerHTML += '<div class="all-done-banner">All priorities done for today. Well done!</div>';
+
+                // Only trigger KWANGYA reward once per day
+                const completeKey = 'lila_daily_complete_' + todayKey;
+                if (!localStorage.getItem(completeKey)) {
+                    localStorage.setItem(completeKey, 'true');
+                    showReward(lastDoneSubject);
+                }
+            }
         }
 
         function getPriorities(count = 6) {
@@ -2008,6 +2078,20 @@
                 if (sc >= 2) continue;
                 result.push(t);
                 subjectCounts[t.subject] = sc + 1;
+            }
+
+            // Coverage guarantee: force unstudied topics for exams within 14 days
+            const urgentUnstudied = allTopics.filter(t =>
+                t.daysUntilExam <= 14 &&
+                storage.getTopicConfidence(t.subject, t.topic) === 'unrated' &&
+                !result.find(r => r.subject === t.subject && r.topic === t.topic)
+            );
+
+            if (urgentUnstudied.length > 0) {
+                // Replace the lowest-scoring item in result with the highest-scoring urgent unstudied
+                urgentUnstudied.sort((a, b) => b.score - a.score);
+                const toInsert = urgentUnstudied[0];
+                result[result.length - 1] = toInsert;
             }
 
             return result;
