@@ -1208,6 +1208,58 @@
         }
         .reward-close:hover { background: rgba(255,255,255,0.1); }
 
+        .study-timer {
+            position: fixed;
+            bottom: 90px;
+            left: 16px;
+            background: rgba(42, 50, 80, 0.9);
+            border: 1px solid #4a5a8a;
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 13px;
+            font-family: monospace;
+            color: #8a9adb;
+            z-index: 80;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s;
+        }
+
+        .study-timer.paused {
+            opacity: 0.4;
+        }
+
+        .study-timer.warning {
+            color: #ffd47a;
+            border-color: #8a7a3a;
+        }
+
+        .timer-icon {
+            font-size: 11px;
+        }
+
+        .break-toast {
+            position: fixed;
+            bottom: 130px;
+            left: 16px;
+            background: linear-gradient(135deg, #5a6a3a 0%, #4a5a2a 100%);
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-size: 13px;
+            color: #ffd47a;
+            z-index: 80;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s;
+            pointer-events: none;
+        }
+
+        .break-toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
     </style>
 </head>
 <body>
@@ -2851,6 +2903,94 @@
         });
 
         switchTab('today-view');
+    </script>
+
+    <div class="study-timer" id="study-timer">
+        <span class="timer-icon">⏱</span>
+        <span id="timer-display">00:00</span>
+    </div>
+    <div class="break-toast" id="break-toast">45 minutes. Good time for a break.</div>
+
+    <script>
+        // Study timer
+        const TIMER_BREAK_INTERVAL = 45 * 60; // 45 minutes in seconds
+        const TIMER_IDLE_THRESHOLD = 3 * 60 * 1000; // 3 minutes in ms
+
+        let timerSeconds = 0;
+        let timerInterval = null;
+        let timerPaused = false;
+        let lastInteraction = Date.now();
+        let breakCount = 0; // tracks how many 45-min intervals have passed
+
+        function startTimer() {
+            if (timerInterval) return;
+            timerInterval = setInterval(() => {
+                // Check for inactivity
+                if (Date.now() - lastInteraction > TIMER_IDLE_THRESHOLD) {
+                    if (!timerPaused) {
+                        timerPaused = true;
+                        document.getElementById('study-timer').classList.add('paused');
+                    }
+                    return; // don't increment while paused
+                }
+
+                if (timerPaused) {
+                    timerPaused = false;
+                    document.getElementById('study-timer').classList.remove('paused');
+                }
+
+                timerSeconds++;
+                updateTimerDisplay();
+
+                // Check for 45-minute intervals
+                if (timerSeconds === TIMER_BREAK_INTERVAL * (breakCount + 1)) {
+                    showBreakToast();
+                    breakCount++;
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const mins = Math.floor(timerSeconds / 60);
+            const secs = timerSeconds % 60;
+            document.getElementById('timer-display').textContent =
+                String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+
+            // Warning colour at 45-min intervals (within 5 minutes of the break point)
+            const nextBreak = TIMER_BREAK_INTERVAL * (breakCount + 1);
+            const timerEl = document.getElementById('study-timer');
+            if (timerSeconds >= nextBreak - 300 && timerSeconds <= nextBreak) {
+                timerEl.classList.add('warning');
+            } else {
+                timerEl.classList.remove('warning');
+            }
+        }
+
+        function showBreakToast() {
+            const toast = document.getElementById('break-toast');
+            toast.classList.add('show');
+            // Auto-reset timer colour after showing toast
+            document.getElementById('study-timer').classList.remove('warning');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 5000);
+        }
+
+        // Track any interaction
+        document.addEventListener('click', () => {
+            lastInteraction = Date.now();
+            if (timerPaused) {
+                timerPaused = false;
+                document.getElementById('study-timer').classList.remove('paused');
+            }
+        });
+
+        document.addEventListener('keydown', () => {
+            lastInteraction = Date.now();
+        });
+
+        // Start timer on page load
+        startTimer();
     </script>
 </body>
 </html>
