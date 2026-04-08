@@ -1827,8 +1827,28 @@
             "The exam paper will not know what hit it."
         ];
 
-        let rewardCounter = 0;
+        // Session tracking for rewards
+        let sessionCardsRated = 0;
+        let sessionSubjectCounts = {};
         let rewardTimeout = null;
+
+        function getSessionDominantSubject() {
+            let best = null, bestCount = 0;
+            for (const [subj, count] of Object.entries(sessionSubjectCounts)) {
+                if (count > bestCount) { best = subj; bestCount = count; }
+            }
+            return best || 'Environmental Science';
+        }
+
+        function trySessionReward() {
+            if (sessionCardsRated < 3) return;
+            // Check if daily completion just happened (let that reward take priority)
+            const today = new Date().toISOString().slice(0, 10);
+            if (localStorage.getItem('lila_daily_complete_' + today)) return;
+            showReward(getSessionDominantSubject());
+            sessionCardsRated = 0;
+            sessionSubjectCounts = {};
+        }
 
         function generateReward(subject) {
             const member = AESPA_MEMBERS[Math.floor(Math.random() * AESPA_MEMBERS.length)];
@@ -2326,6 +2346,10 @@
         }
 
         function switchTab(tabName) {
+            // Trigger session reward when leaving flashcard view
+            if (currentTab === 'flashcard-view' && tabName !== 'flashcard-view') {
+                trySessionReward();
+            }
             currentTab = tabName;
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -2390,7 +2414,7 @@
             flashcardEngine.filterSubject = e.target.value;
             flashcardEngine.buildCards();
             updateFlashcardDisplay();
-            rewardCounter = 0;
+            sessionCardsRated = 0; sessionSubjectCounts = {};
 
             const topics = flashcardEngine.filterSubject
                 ? Object.keys(FLASHCARD_DATA.subjects[e.target.value].topics)
@@ -2404,14 +2428,14 @@
             flashcardEngine.filterTopic = e.target.value;
             flashcardEngine.buildCards();
             updateFlashcardDisplay();
-            rewardCounter = 0;
+            sessionCardsRated = 0; sessionSubjectCounts = {};
         });
 
         document.getElementById('card-mode').addEventListener('change', (e) => {
             flashcardEngine.cardMode = e.target.value;
             flashcardEngine.buildCards();
             updateFlashcardDisplay();
-            rewardCounter = 0;
+            sessionCardsRated = 0; sessionSubjectCounts = {};
         });
 
         document.getElementById('flashcard').addEventListener('click', () => {
@@ -2449,15 +2473,16 @@
                     const totalCards = (topicData.definitions || []).length + (topicData.questions || []).length;
                     storage.setCardConfidence(card.subject, card.topic, card.id, rating, totalCards);
 
-                    rewardCounter++;
+                    sessionCardsRated++;
+                    sessionSubjectCounts[card.subject] = (sessionSubjectCounts[card.subject] || 0) + 1;
+
+                    // Check if all cards in the current filter are rated (filter completion)
                     const allCurrentCards = flashcardEngine.getCount();
                     const ratedCount = flashcardEngine.cards.filter(c => {
                         return storage.getCardConfidence(c.subject, c.topic, c.id) !== 'unrated';
                     }).length;
-                    const isTopicComplete = (allCurrentCards > 0 && ratedCount >= allCurrentCards);
-                    if (rewardCounter >= 10 || isTopicComplete) {
-                        showReward(card.subject);
-                        rewardCounter = 0;
+                    if (allCurrentCards > 0 && ratedCount >= allCurrentCards) {
+                        trySessionReward();
                     }
 
                     flashcardEngine.next();
