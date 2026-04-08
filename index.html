@@ -2381,25 +2381,43 @@
         function renderDailyDrill() {
             const container = document.getElementById('daily-drill-container');
             const now = new Date();
+            const todayKey = getLocalDateKey();
+            const drillStorageKey = 'lila_daily_drills_' + todayKey;
+
+            // Lock drill topics per day (same pattern as priorities)
+            let lockedDrills = null;
+            const storedDrills = localStorage.getItem(drillStorageKey);
+            if (storedDrills) {
+                try { lockedDrills = JSON.parse(storedDrills); } catch (e) { /* regenerate */ }
+            }
+
+            if (!lockedDrills) {
+                lockedDrills = {};
+                DAILY_DRILL_SUBJECTS.forEach(drill => {
+                    const subjectData = FLASHCARD_DATA.subjects[drill.subject];
+                    if (!subjectData) return;
+                    const topics = Object.keys(subjectData.topics);
+                    const weakTopics = topics.filter(t => {
+                        const c = storage.getTopicConfidence(drill.subject, t);
+                        return c === 'unrated' || c === 'not-yet';
+                    });
+                    const pool = weakTopics.length > 0 ? weakTopics : topics;
+                    const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+                    lockedDrills[drill.subject] = pool[dayOfYear % pool.length];
+                });
+                localStorage.setItem(drillStorageKey, JSON.stringify(lockedDrills));
+            }
+
+            let allDrillsDone = DAILY_DRILL_SUBJECTS.length > 0;
 
             container.innerHTML = DAILY_DRILL_SUBJECTS.map(drill => {
-                // Pick a random unrated or weak topic from this subject, or any topic if all rated
-                const subjectData = FLASHCARD_DATA.subjects[drill.subject];
-                if (!subjectData) return '';
-                const topics = Object.keys(subjectData.topics);
-                // Prefer weak/unrated topics
-                const weakTopics = topics.filter(t => {
-                    const c = storage.getTopicConfidence(drill.subject, t);
-                    return c === 'unrated' || c === 'not-yet';
-                });
-                const pool = weakTopics.length > 0 ? weakTopics : topics;
-                // Pick based on day of year so it's consistent within a day but changes daily
-                const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
-                const topic = pool[dayOfYear % pool.length];
+                const topic = lockedDrills[drill.subject];
+                if (!topic) return '';
 
-                // Check if already done today
                 const lastStudied = storage.getLastStudied(drill.subject, topic);
                 const doneToday = lastStudied && (now - lastStudied) < (1000 * 60 * 60 * 16);
+
+                if (!doneToday) allDrillsDone = false;
 
                 return `
                     <div class="drill-row" style="${doneToday ? 'opacity: 0.5; border-left-color: #4a9a5a;' : ''}">
@@ -2412,6 +2430,16 @@
                     </div>
                 `;
             }).join('');
+
+            // Reward for completing all drills (once per day)
+            if (allDrillsDone) {
+                const drillCompleteKey = 'lila_daily_drills_complete_' + todayKey;
+                if (!localStorage.getItem(drillCompleteKey)) {
+                    localStorage.setItem(drillCompleteKey, 'true');
+                    const drillSubject = DAILY_DRILL_SUBJECTS[0]?.subject || 'Environmental Science';
+                    showReward(drillSubject);
+                }
+            }
         }
 
         function renderPriorities() {
