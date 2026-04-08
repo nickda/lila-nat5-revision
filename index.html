@@ -2409,12 +2409,17 @@
                 try {
                     const parsed = JSON.parse(stored);
                     if (Array.isArray(parsed) && parsed.length > 0) {
-                        // Restore frequency from PAST_PAPER_DATA for rendering
-                        priorities = parsed.map(p => ({
-                            subject: p.subject,
-                            topic: p.topic,
-                            frequency: PAST_PAPER_DATA[p.subject]?.topics?.[p.topic]?.frequency || 'low'
-                        }));
+                        // Filter out topics that no longer exist in FLASHCARD_DATA
+                        const valid = parsed.filter(p =>
+                            FLASHCARD_DATA.subjects[p.subject]?.topics?.[p.topic]
+                        );
+                        if (valid.length > 0) {
+                            priorities = valid.map(p => ({
+                                subject: p.subject,
+                                topic: p.topic,
+                                frequency: PAST_PAPER_DATA[p.subject]?.topics?.[p.topic]?.frequency || 'low'
+                            }));
+                        }
                     }
                 } catch (e) {
                     // Corrupted data, regenerate
