@@ -1081,6 +1081,119 @@
             z-index: 1;
         }
 
+        .collection-stats {
+            text-align: center;
+            font-size: 14px;
+            color: #8a9adb;
+            margin-bottom: 16px;
+        }
+
+        .collection-grid {
+            display: grid;
+            grid-template-columns: auto repeat(4, 1fr);
+            gap: 2px;
+            font-size: 12px;
+        }
+
+        .collection-header {
+            padding: 8px 4px;
+            text-align: center;
+            font-weight: 600;
+            color: #b0c4ff;
+            font-size: 11px;
+        }
+
+        .collection-subject-label {
+            padding: 8px 6px;
+            font-size: 11px;
+            color: #8a9adb;
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+        }
+
+        .collection-cell {
+            padding: 8px;
+            text-align: center;
+            border-radius: 6px;
+            cursor: default;
+            transition: all 0.2s;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .collection-cell.locked {
+            background: rgba(255,255,255,0.03);
+            color: #3a4a6a;
+            font-size: 16px;
+        }
+
+        .collection-cell.unlocked {
+            background: linear-gradient(135deg, #3d2d5a 0%, #4d3561 100%);
+            color: #d0b0ff;
+            font-size: 14px;
+            cursor: pointer;
+            border: 1px solid #6a4a9a;
+        }
+
+        .collection-cell.unlocked:hover {
+            background: linear-gradient(135deg, #4d3d6a 0%, #5d4571 100%);
+            transform: scale(1.05);
+        }
+
+        .collection-detail {
+            background: linear-gradient(135deg, #2d2050 0%, #3d2d60 100%);
+            border: 1px solid #6a4a9a;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 12px;
+            display: none;
+        }
+
+        .collection-detail.show {
+            display: block;
+        }
+
+        .collection-detail-member {
+            font-size: 16px;
+            font-weight: 600;
+            color: #d0b0ff;
+            margin-bottom: 4px;
+        }
+
+        .collection-detail-subject {
+            font-size: 12px;
+            color: #8a9adb;
+            margin-bottom: 12px;
+        }
+
+        .collection-detail-text {
+            font-size: 13px;
+            color: #c0d0ff;
+            line-height: 1.6;
+        }
+
+        .reward-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: none;
+            border: none;
+            color: #b0c4ff;
+            font-size: 24px;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            z-index: 10;
+        }
+        .reward-close:hover { background: rgba(255,255,255,0.1); }
+
     </style>
 </head>
 <body>
@@ -1199,6 +1312,12 @@
             <div class="section-title" style="margin-bottom: 16px;">Revision Milestones</div>
             <div id="milestones-list"></div>
         </div>
+
+        <div id="collection-view" class="view">
+            <div class="section-title" style="margin-bottom: 16px;">KWANGYA Collection</div>
+            <div class="collection-stats" id="collection-stats"></div>
+            <div class="collection-grid" id="collection-grid"></div>
+        </div>
     </div>
 
     <div class="sync-indicator"><span class="sync-dot" id="sync-dot"></span><span id="sync-label">offline</span></div>
@@ -1234,10 +1353,11 @@
 
     <div id="reward-modal" class="reward-modal">
         <div class="reward-content">
+            <button class="reward-close" onclick="dismissReward()">&times;</button>
             <div class="reward-photo" id="reward-photo"></div>
             <div class="reward-member" id="reward-member"></div>
             <div class="reward-text" id="reward-text"></div>
-            <div class="reward-dismiss">tap to continue studying</div>
+            <div class="reward-dismiss">tap anywhere to close</div>
         </div>
     </div>
 
@@ -1265,6 +1385,10 @@
         <button class="tab-btn" data-tab="schedule-view">
             <div class="tab-icon">📍</div>
             <div>Schedule</div>
+        </button>
+        <button class="tab-btn" data-tab="collection-view">
+            <div class="tab-icon">💜</div>
+            <div>MY</div>
         </button>
     </nav>
 
@@ -1880,6 +2004,14 @@
                 '<span class="reward-hook">' + r.hook + '</span>' +
                 '<span class="reward-closer">' + r.closer + '</span>';
 
+            // Save to collection
+            const collectionKey = storage.prefix + 'collection_' + r.member + '_' + subject;
+            if (!storage.cache[collectionKey]) {
+                storage.cache[collectionKey] = JSON.stringify({ member: r.member, subject: subject, hook: r.hook, closer: r.closer, date: new Date().toISOString() });
+                localStorage.setItem(collectionKey, storage.cache[collectionKey]);
+                storage._firebaseWrite({ [collectionKey]: storage.cache[collectionKey] });
+            }
+
             const modal = document.getElementById('reward-modal');
             modal.classList.add('show');
             requestAnimationFrame(() => {
@@ -1888,8 +2020,6 @@
                 });
             });
 
-            if (rewardTimeout) clearTimeout(rewardTimeout);
-            rewardTimeout = setTimeout(() => dismissReward(), 6000);
         }
 
         function dismissReward() {
@@ -1907,6 +2037,71 @@
         document.getElementById('reward-modal').addEventListener('click', () => {
             dismissReward();
         });
+
+        function renderCollection() {
+            const members = ["Karina", "Giselle", "Winter", "NingNing"];
+            const subjects = Object.keys(FLASHCARD_DATA.subjects);
+
+            // Count unlocked
+            let unlocked = 0;
+            const total = members.length * subjects.length;
+            const collectionData = {};
+
+            members.forEach(m => {
+                subjects.forEach(s => {
+                    const key = storage.prefix + 'collection_' + m + '_' + s;
+                    const val = storage.cache[key] || localStorage.getItem(key);
+                    if (val) {
+                        unlocked++;
+                        collectionData[m + '_' + s] = JSON.parse(val);
+                    }
+                });
+            });
+
+            document.getElementById('collection-stats').textContent = unlocked + ' of ' + total + ' collected';
+
+            // Build grid: header row, then one row per subject
+            let html = '<div class="collection-header"></div>';
+            members.forEach(m => {
+                html += '<div class="collection-header">' + m + '</div>';
+            });
+
+            subjects.forEach(s => {
+                const shortName = s.length > 12 ? s.substring(0, 11) + '...' : s;
+                html += '<div class="collection-subject-label">' + shortName + '</div>';
+                members.forEach(m => {
+                    const data = collectionData[m + '_' + s];
+                    if (data) {
+                        html += '<div class="collection-cell unlocked" onclick="showCollectionDetail(\'' + m + '\', \'' + s.replace(/'/g, "\\'") + '\')">' + m.charAt(0) + '</div>';
+                    } else {
+                        html += '<div class="collection-cell locked">?</div>';
+                    }
+                });
+            });
+
+            document.getElementById('collection-grid').innerHTML = html;
+        }
+
+        function showCollectionDetail(member, subject) {
+            const key = storage.prefix + 'collection_' + member + '_' + subject;
+            const val = storage.cache[key] || localStorage.getItem(key);
+            if (!val) return;
+
+            const data = JSON.parse(val);
+            let detail = document.getElementById('collection-detail');
+            if (!detail) {
+                detail = document.createElement('div');
+                detail.id = 'collection-detail';
+                detail.className = 'collection-detail';
+                document.getElementById('collection-grid').after(detail);
+            }
+
+            detail.innerHTML =
+                '<div class="collection-detail-member">' + data.member + '</div>' +
+                '<div class="collection-detail-subject">' + data.subject + '</div>' +
+                '<div class="collection-detail-text">' + data.hook + ' ' + data.closer + '</div>';
+            detail.classList.add('show');
+        }
 
         function renderToday() {
             renderDailyDrill();
@@ -2362,6 +2557,7 @@
             if (tabName === 'exam-view') renderExams();
             if (tabName === 'papers-view') renderPastPapers();
             if (tabName === 'schedule-view') renderSchedule();
+            if (tabName === 'collection-view') renderCollection();
         }
 
         function closeModal() {
