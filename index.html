@@ -1156,6 +1156,20 @@
             display: block;
         }
 
+        .collection-detail-photo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin: 0 auto 12px;
+            border: 2px solid #6a4a9a;
+        }
+        .collection-detail-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
         .collection-detail-member {
             font-size: 16px;
             font-weight: 600;
@@ -1858,62 +1872,174 @@
 
         // KWANGYA Study Log: AESPA reward system
         const REWARD_HOOKS = {
-            "Environmental Science": [
-                "KWANGYA is basically an ecosystem too, and you are learning to protect both.",
-                "Black Mamba threatens the virtual world; climate change threatens the real one. You are studying to fight both.",
-                "NingNing once said the natural world inspires her vocals. Your Env Sci knowledge would impress her.",
-                "Every biome you learn is another level cleared in the real-world KWANGYA.",
-                "Sustainability is the ultimate concept. AESPA would approve of your revision."
-            ],
-            "Music": [
-                "The synth drop in Supernova? That is dynamic contrast, and you just studied it.",
-                "You could probably analyse an AESPA track for your listening exam now.",
-                "Next Level has more time signature changes than most textbooks. You are ready for this.",
-                "Karina's vocal tone is a case study in timbre. You are learning to hear what others miss.",
-                "Every musical concept you revise makes the next comeback hit even better to listen to."
-            ],
-            "English": [
-                "AESPA lyrics are full of metaphor and imagery. You are learning to see what most people miss.",
-                "Giselle writes in three languages. Your English analysis skills are building the same kind of precision.",
-                "Wilde would have appreciated AESPA's commitment to dramatic irony.",
-                "Close reading is a superpower. You are training yours with every card.",
-                "The best writers notice patterns. So do the best MYs. You are doing both right now."
-            ],
-            "Drama": [
-                "AESPA's stage presence is basically everything you are studying: voice, movement, proxemics, lighting.",
-                "Lady Bracknell's interrogation scene has the same energy as Karina's stare in the Savage MV.",
-                "Winter's facial expressions during performances would score full marks in your acting concepts section.",
-                "Proxemics, levels, stillness: AESPA performances are a Drama exam in motion.",
-                "You are building the vocabulary to describe what makes a performance unforgettable."
-            ],
-            "French": [
-                "Giselle speaks Japanese, Korean, and English fluently. French is just your fourth language energy.",
-                "AESPA performed in Paris. Imagine understanding every word at the concert AND the cafe after.",
-                "Savoir, pouvoir, vouloir: the three verbs of a K-pop trainee. You are mastering them too.",
-                "Every conjugation you learn brings you closer to ordering croissants at the Paris fan meet.",
-                "French grammar is tough, but so is learning choreography in heels. You have got this."
-            ],
-            "Maths": [
-                "If Supernova hit 100 million streams in 10 days, that is 10 million per day. Your percentage skills could calculate the growth rate.",
-                "K-pop choreography is basically applied geometry: angles, symmetry, spatial reasoning.",
-                "AESPA's comeback schedule is more complex than a simultaneous equation, and you are solving both.",
-                "Probability says you will see at least one topic you revised in the exam. Maths is on your side.",
-                "Every formula you memorise is a cheat code for the real KWANGYA."
-            ],
-            "Modern Studies": [
-                "K-pop's global influence is basically a case study in soft power, which you could write about in Section 3.",
-                "AESPA has fans in 150+ countries. That is more international reach than most pressure groups you are studying.",
-                "The way fandoms organise online is textbook democratic participation. Your Modern Studies teacher would agree.",
-                "Media influence, representation, global citizenship: K-pop covers half your syllabus without trying.",
-                "You are learning how the world works. That is the most powerful thing anyone can study."
-            ],
-            "Art and Design": [
-                "AESPA's visual concepts: line, colour, form, texture, target audience. You literally studied this today.",
-                "The Whiplash album design would make an excellent design studies case. Form follows function, even in K-pop.",
-                "Van Gogh painted starry nights; AESPA films in KWANGYA. Both use colour to create emotion.",
-                "Every design principle you learn sharpens the way you see album art, MVs, and stage design.",
-                "Colour theory, contrast, hierarchy: AESPA's creative team uses them all. So will you in your exam."
-            ]
+            "Karina": {
+                "Environmental Science": [
+                    "Protecting the planet takes discipline and long-term thinking. You just showed both.",
+                    "I approach every comeback with a plan. You are approaching Env Sci the same way, and it shows.",
+                    "KWANGYA needs guardians. The real world needs people who understand ecosystems. That is you."
+                ],
+                "Music": [
+                    "Performing means controlling every detail: dynamics, timing, expression. You are learning to hear all of that.",
+                    "I rehearse a move until it is automatic. You are building that same muscle memory with musical concepts.",
+                    "Precision in music is precision in everything. You showed that today."
+                ],
+                "English": [
+                    "Clear communication takes confidence. Analysing texts is how you build it.",
+                    "I read the room before every stage. You are learning to read a text the same way: closely and with purpose.",
+                    "The best leaders choose their words carefully. So do the best English students."
+                ],
+                "Drama": [
+                    "Stage presence is not luck. It is preparation, focus, and commitment. You are training all three.",
+                    "I lead AESPA through every performance. You are learning what makes a performance land, and that is real skill.",
+                    "Discipline on stage and discipline in revision come from the same place. Keep going."
+                ],
+                "French": [
+                    "Learning a language is a commitment. I respect anyone who sticks with something difficult.",
+                    "Every conjugation you master is proof that you do not quit when things get hard.",
+                    "Focus and repetition. That is how I learned choreography, and it is how you will learn French."
+                ],
+                "Maths": [
+                    "Precision matters. In choreography and in quadratics. You showed both today.",
+                    "I do not leave anything to chance on stage. Your approach to Maths should be the same: methodical, exact, confident.",
+                    "Every formula you lock in is one less thing to worry about on exam day. That is smart preparation."
+                ],
+                "Modern Studies": [
+                    "Understanding how the world works is the foundation of everything. You are building that foundation right now.",
+                    "Leaders need to understand power, influence, and responsibility. That is exactly what you are studying.",
+                    "The world needs people who pay attention. Your Modern Studies revision is proof that you do."
+                ],
+                "Art and Design": [
+                    "Visual impact is everything on stage. You are learning the principles behind why things look the way they do.",
+                    "Design is about intention. Every choice has a reason. You are learning to see that.",
+                    "I care about every detail in a performance. You are training that same eye for design."
+                ]
+            },
+            "Giselle": {
+                "Environmental Science": [
+                    "I pick up languages by paying attention to patterns. Ecosystems run on patterns too. You are reading the right ones.",
+                    "Sustainability in three syllables, durabilite in five. Either way, you are learning to protect what matters.",
+                    "The natural world does not need subtitles. But your Env Sci answers do need detail, and you are nailing it."
+                ],
+                "Music": [
+                    "Writing verses means listening to rhythm, flow, and space. You are training that same ear right now.",
+                    "I think in three languages when I write. You are learning to think in musical language, and that is just as cool.",
+                    "Syncopation, dynamics, texture: these are the words that turn noise into music. You are learning them."
+                ],
+                "English": [
+                    "Three languages down, and I still think the hardest part is saying exactly what you mean. English analysis teaches you that.",
+                    "I write in English, Korean, and Japanese. Your close reading skills would make you dangerous in any of them.",
+                    "Words carry weight in every language. You are learning to measure that weight precisely."
+                ],
+                "Drama": [
+                    "Rapping is acting: timing, delivery, presence. You are studying the building blocks of all of it.",
+                    "I switch languages on stage depending on the energy. You are learning what makes an audience feel something. Same skill.",
+                    "Stage presence is about making choices that land. Your Drama revision is teaching you exactly that."
+                ],
+                "French": [
+                    "Three languages down, French is number four. I started learning languages because I wanted to connect with more people. You are doing the same thing.",
+                    "Languages open doors. Every verb you conjugate is another door you can walk through.",
+                    "I learned English by watching shows and reading everything I could. Your approach to French is just as valid."
+                ],
+                "Maths": [
+                    "Patterns in numbers, patterns in language. My brain works the same way with both. Yours is doing it right now.",
+                    "I count bars and beats when I write verses. You are counting with more precision than that, and it is working.",
+                    "Maths is its own language. You are becoming fluent."
+                ],
+                "Modern Studies": [
+                    "I have lived in three countries. The things you are studying in Modern Studies? I have seen them play out in real life.",
+                    "Global citizenship is not just a textbook term. It is how I grew up. You are learning the framework behind it.",
+                    "Understanding politics and society takes the same skill as understanding people: you have to pay attention."
+                ],
+                "Art and Design": [
+                    "I notice design everywhere: album covers, stage sets, even restaurant menus. You are training that same awareness.",
+                    "Colour, layout, typography: these are creative choices with real impact. You are learning why they work.",
+                    "Art is communication without words. You are learning its grammar."
+                ]
+            },
+            "Winter": {
+                "Environmental Science": [
+                    "The natural world has its own kind of harmony. You are learning to hear it.",
+                    "When I sing, I feel connected to something bigger. Studying the environment does the same thing, just with science.",
+                    "Every ecosystem you learn about is a reminder that everything is connected. That is a beautiful thing to understand."
+                ],
+                "Music": [
+                    "When I sing, I listen to every harmony around me. You are training that same ear right now.",
+                    "Music is about feeling and precision at the same time. You are learning to hold both.",
+                    "I practise scales even now. The fundamentals never stop mattering. You are building yours."
+                ],
+                "English": [
+                    "The best lyrics tell a story with economy. That is what good English analysis teaches you too.",
+                    "I connect with songs through their words first. You are learning to connect with texts the same way.",
+                    "Reading closely is like listening closely. You pick up things everyone else walks past."
+                ],
+                "Drama": [
+                    "When I perform, every expression has to be genuine. That is what you are studying: truth on stage.",
+                    "The best performances make people feel something real. Your Drama revision is teaching you how that works.",
+                    "I think about emotion before technique. You are learning that balance too."
+                ],
+                "French": [
+                    "Every language has its own music. French has one of the most beautiful rhythms I have heard.",
+                    "Learning a language takes patience and heart. You have both.",
+                    "I would love to sing in French one day. You are already ahead of me on that."
+                ],
+                "Maths": [
+                    "There is something satisfying about a problem that resolves perfectly. Like a chord progression coming home.",
+                    "Harmony is built on ratios and intervals. Maths and music are closer than people think.",
+                    "You are solving problems with patience and care. That is exactly how I approach a difficult vocal part."
+                ],
+                "Modern Studies": [
+                    "I care about the world beyond the stage. You are learning to understand it in a structured, serious way.",
+                    "Empathy is easier when you understand how society works. That is what Modern Studies gives you.",
+                    "The people who change things are the ones who understand how things work first. That is you right now."
+                ],
+                "Art and Design": [
+                    "I am drawn to visuals that make me feel something. You are learning the principles that create that feeling.",
+                    "Colour, light, composition: these are emotional tools. You are learning to use them with intention.",
+                    "Art is about seeing the world differently. Every concept you study sharpens that vision."
+                ]
+            },
+            "NingNing": {
+                "Environmental Science": [
+                    "The planet is incredible, and you are learning how it actually works. That is so cool!",
+                    "Ecosystems, food webs, carbon cycles: your brain is absorbing all of it and I am here for it!",
+                    "You are going to walk into that exam knowing things most people never bother to learn. That is power!"
+                ],
+                "Music": [
+                    "I pour everything into my high notes. You are pouring everything into understanding music, and I can tell!",
+                    "Dynamics, tempo, timbre: you are building a vocabulary that makes you hear music on a whole new level!",
+                    "When I sing, I want people to feel it. You are learning exactly how that happens. Keep going!"
+                ],
+                "English": [
+                    "Words are powerful. You are learning to use them like a weapon (the good kind)!",
+                    "I love when lyrics hit you right in the chest. That is what great writing does, and you are learning to spot it!",
+                    "Close reading is like turning up the volume on meaning. You are getting so good at this!"
+                ],
+                "Drama": [
+                    "Stage presence is about commitment. You just committed to learning it properly, and that takes guts!",
+                    "I give everything when I perform. You are building the knowledge to understand why that works!",
+                    "Drama is about being brave enough to be seen. Revising it takes the same courage. You have it!"
+                ],
+                "French": [
+                    "A whole new language! That is so ambitious and I am completely here for it!",
+                    "Every new word you learn is a little victory. Stack enough of those and you will be unstoppable!",
+                    "French is beautiful and tricky and totally worth it. You are proving that right now!"
+                ],
+                "Maths": [
+                    "Numbers do not lie and neither does your effort. You are putting in the work!",
+                    "I get a rush when I nail a high note. You are going to get that same rush when Maths clicks. It is coming!",
+                    "Formulas, equations, problem-solving: your brain is doing amazing things right now!"
+                ],
+                "Modern Studies": [
+                    "You are learning how the world actually works. That is basically a superpower!",
+                    "Politics, rights, global issues: this stuff matters so much, and you are taking it seriously!",
+                    "Understanding society is the first step to changing it. Look at you, taking that step!"
+                ],
+                "Art and Design": [
+                    "Visuals are everything! You are learning what makes design hit different, and I love that!",
+                    "Colour theory, composition, design principles: you are going to see the world differently after this!",
+                    "Art is about expressing something only you can see. You are building the skills to do exactly that!"
+                ]
+            }
         };
 
         const AESPA_MEMBERS = ["Karina", "Giselle", "Winter", "NingNing"];
@@ -1980,8 +2106,8 @@
 
         function generateReward(subject) {
             const member = AESPA_MEMBERS[Math.floor(Math.random() * AESPA_MEMBERS.length)];
-            const hooks = REWARD_HOOKS[subject] || REWARD_HOOKS["Environmental Science"];
-            const hook = hooks[Math.floor(Math.random() * hooks.length)];
+            const memberHooks = REWARD_HOOKS[member]?.[subject] || REWARD_HOOKS[member]?.["Environmental Science"] || ["You are doing amazing."];
+            const hook = memberHooks[Math.floor(Math.random() * memberHooks.length)];
             const closer = CLOSERS[Math.floor(Math.random() * CLOSERS.length)];
             const photoIndex = (Math.floor(Math.random() * 6)) + 1;
             return { member, hook, closer, photoIndex };
@@ -2115,7 +2241,10 @@
                 document.getElementById('collection-grid').after(detail);
             }
 
+            var member = data.member || member;
+            var subject = data.subject || subject;
             detail.innerHTML =
+                '<div class="collection-detail-photo"><img src="photos/aespa-' + (Math.abs(member.charCodeAt(0) + subject.charCodeAt(0)) % 6 + 1) + '.jpg" alt="' + data.member + '" onerror="this.parentElement.innerHTML=\'<div class=reward-photo-fallback>' + data.member.charAt(0) + '</div>\'"></div>' +
                 '<div class="collection-detail-member">' + data.member + '</div>' +
                 '<div class="collection-detail-subject">' + data.subject + '</div>' +
                 '<div class="collection-detail-text">' + data.hook + ' ' + data.closer + '</div>';
