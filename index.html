@@ -346,13 +346,14 @@
         .flashcard-container {
             perspective: 1000px;
             margin-bottom: 20px;
+            position: relative;
         }
 
         .flashcard {
             background: linear-gradient(135deg, #2d3561 0%, #3d4571 100%);
             border: 2px solid #4a5a8a;
             border-radius: 12px;
-            padding: 30px;
+            padding: 30px 60px 30px 30px;
             min-height: 300px;
             display: flex;
             flex-direction: column;
@@ -361,6 +362,29 @@
             text-align: center;
             cursor: pointer;
             transition: all 0.3s;
+        }
+
+        .card-next-btn {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 50px;
+            background: transparent;
+            border: none;
+            color: #4a5a8a;
+            font-size: 28px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0 12px 12px 0;
+            z-index: 5;
+            transition: all 0.2s;
+        }
+        .card-next-btn:hover {
+            background: rgba(107, 158, 255, 0.1);
+            color: #6b9eff;
         }
 
         .flashcard.flipped {
@@ -993,6 +1017,7 @@
                         <div class="flashcard-content" id="card-back-content">Loading...</div>
                     </div>
                 </div>
+                <button class="card-next-btn" id="card-next-btn" title="Next card">&#x203A;</button>
             </div>
 
             <div class="rating-buttons" id="rating-buttons">
@@ -1927,6 +1952,12 @@
         });
 
         document.getElementById('next-btn').addEventListener('click', () => {
+            flashcardEngine.next();
+            updateFlashcardDisplay();
+        });
+
+        document.getElementById('card-next-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
             flashcardEngine.next();
             updateFlashcardDisplay();
         });
