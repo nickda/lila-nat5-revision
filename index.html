@@ -1700,7 +1700,7 @@
                 const keys = [];
                 for (let i = 0; i < localStorage.length; i++) {
                     const key = localStorage.key(i);
-                    if (key.startsWith(this.prefix)) keys.push(key);
+                    if (key.startsWith(this.prefix) || key.startsWith('lila_daily_')) keys.push(key);
                 }
                 keys.forEach(key => localStorage.removeItem(key));
                 this.cache = {};
@@ -1964,11 +1964,15 @@
             return best || 'Environmental Science';
         }
 
+        function getLocalDateKey() {
+            const d = new Date();
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
+
         function trySessionReward() {
             if (sessionCardsRated < 3) return;
             // Check if daily completion just happened (let that reward take priority)
-            const today = new Date().toISOString().slice(0, 10);
-            if (localStorage.getItem('lila_daily_complete_' + today)) return;
+            if (localStorage.getItem('lila_daily_complete_' + getLocalDateKey())) return;
             showReward(getSessionDominantSubject());
             sessionCardsRated = 0;
             sessionSubjectCounts = {};
@@ -2052,8 +2056,10 @@
                     const key = storage.prefix + 'collection_' + m + '_' + s;
                     const val = storage.cache[key] || localStorage.getItem(key);
                     if (val) {
-                        unlocked++;
-                        collectionData[m + '_' + s] = JSON.parse(val);
+                        try {
+                            collectionData[m + '_' + s] = JSON.parse(val);
+                            unlocked++;
+                        } catch (e) { /* skip corrupt entry */ }
                     }
                 });
             });
@@ -2082,13 +2088,26 @@
             document.getElementById('collection-grid').innerHTML = html;
         }
 
+        let activeCollectionCell = null;
+
         function showCollectionDetail(member, subject) {
+            const cellKey = member + '_' + subject;
+            let detail = document.getElementById('collection-detail');
+
+            // Toggle off if clicking the same cell
+            if (activeCollectionCell === cellKey && detail && detail.classList.contains('show')) {
+                detail.classList.remove('show');
+                activeCollectionCell = null;
+                return;
+            }
+
             const key = storage.prefix + 'collection_' + member + '_' + subject;
             const val = storage.cache[key] || localStorage.getItem(key);
             if (!val) return;
 
-            const data = JSON.parse(val);
-            let detail = document.getElementById('collection-detail');
+            let data;
+            try { data = JSON.parse(val); } catch (e) { return; }
+
             if (!detail) {
                 detail = document.createElement('div');
                 detail.id = 'collection-detail';
@@ -2101,6 +2120,7 @@
                 '<div class="collection-detail-subject">' + data.subject + '</div>' +
                 '<div class="collection-detail-text">' + data.hook + ' ' + data.closer + '</div>';
             detail.classList.add('show');
+            activeCollectionCell = cellKey;
         }
 
         function renderToday() {
@@ -2148,7 +2168,7 @@
         function renderPriorities() {
             const container = document.getElementById('priorities-container');
             const now = new Date();
-            const todayKey = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+            const todayKey = getLocalDateKey();
             const storageKey = 'lila_daily_priorities_' + todayKey;
 
             // Lock priorities on first visit of the day
@@ -2541,6 +2561,12 @@
         }
 
         function switchTab(tabName) {
+            // Close collection detail when leaving collection view
+            if (currentTab === 'collection-view' && tabName !== 'collection-view') {
+                const detail = document.getElementById('collection-detail');
+                if (detail) detail.classList.remove('show');
+                activeCollectionCell = null;
+            }
             // Trigger session reward when leaving flashcard view
             if (currentTab === 'flashcard-view' && tabName !== 'flashcard-view') {
                 trySessionReward();
