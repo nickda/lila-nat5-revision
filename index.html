@@ -510,12 +510,6 @@
             margin-bottom: 8px;
         }
 
-        .exam-preview {
-            font-size: 12px;
-            color: #b0c4ff;
-            line-height: 1.5;
-        }
-
         .exam-details {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 8px;
@@ -523,13 +517,17 @@
             margin-top: 12px;
             font-size: 13px;
             line-height: 1.6;
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s;
         }
 
-        .exam-card.expanded .exam-details {
-            max-height: 500px;
+        .exam-card.imminent {
+            border-left-color: #ff6b6b;
+            background: linear-gradient(135deg, #3d2d41 0%, #4d3551 100%);
+        }
+        .exam-card.imminent .exam-name::after {
+            content: " (TOMORROW)";
+            font-size: 11px;
+            color: #ff6b6b;
+            font-weight: 400;
         }
 
         .papers-list {
@@ -1763,14 +1761,18 @@
 
         function renderExams() {
             const exams = Object.entries(EXAM_DATES).sort((a, b) => a[1] - b[1]);
-            document.getElementById('exam-list').innerHTML = exams.map(([exam, date]) => `
-                <div class="exam-card" onclick="this.classList.toggle('expanded')">
+            const now = new Date();
+            document.getElementById('exam-list').innerHTML = exams.map(([exam, date]) => {
+                const hoursUntil = (date - now) / (1000 * 60 * 60);
+                const isImminent = hoursUntil > 0 && hoursUntil < 36;
+                return `
+                <div class="exam-card${isImminent ? ' imminent' : ''}">
                     <div class="exam-date">${date.toLocaleDateString('en-GB', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
                     <div class="exam-name">${exam}</div>
-                    <div class="exam-preview">${(EXAM_CHEAT_SHEETS[exam] || '').substring(0, 60)}...</div>
                     <div class="exam-details">${EXAM_CHEAT_SHEETS[exam] || 'No details'}</div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
 
         function renderPastPapers() {
