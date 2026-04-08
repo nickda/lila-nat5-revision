@@ -2614,25 +2614,29 @@
             const nearestSubject = Object.entries(subjectExamDates)
                 .sort((a, b) => a[1] - b[1])[0]?.[0];
 
-            // Build result: guarantee 2 slots for nearest exam subject, max 2 per subject
+            // Nearest exam subject gets more slots when exam is close
+            const nearestDays = subjectExamDates[nearestSubject] || 99;
+            const nearestSlots = nearestDays <= 14 ? 3 : 2;
+            const otherMax = 2;
+
             const result = [];
             const subjectCounts = {};
 
-            // First: top 2 from nearest exam subject
+            // First: top N from nearest exam subject
             for (const t of allTopics) {
-                if (result.length >= 2) break;
+                if (result.length >= nearestSlots) break;
                 if (t.subject === nearestSubject) {
                     result.push(t);
                     subjectCounts[nearestSubject] = (subjectCounts[nearestSubject] || 0) + 1;
                 }
             }
 
-            // Then: fill remaining slots by score, max 2 per subject
+            // Then: fill remaining slots by score, max 2 per other subject
             for (const t of allTopics) {
                 if (result.length >= count) break;
                 if (result.includes(t)) continue;
                 const sc = subjectCounts[t.subject] || 0;
-                if (sc >= 2) continue;
+                if (sc >= otherMax) continue;
                 result.push(t);
                 subjectCounts[t.subject] = sc + 1;
             }
