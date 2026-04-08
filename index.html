@@ -1656,7 +1656,7 @@
                 const label = document.getElementById('sync-label');
                 if (!dot) return;
                 dot.className = 'sync-dot ' + state;
-                label.textContent = state === 'online' ? 'synced' : state === 'offline' ? 'local only' : 'sync error';
+                label.textContent = state === 'online' ? 'synked' : state === 'offline' ? 'local only' : 'sync error';
             }
 
             _firebaseWrite(updates) {
