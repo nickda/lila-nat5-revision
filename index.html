@@ -930,6 +930,143 @@
             margin-top: 12px;
             display: none;
         }
+        /* KWANGYA Study Log reward modal */
+        .reward-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 300;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .reward-modal.show {
+            display: flex;
+        }
+
+        .reward-modal.show.visible {
+            opacity: 1;
+        }
+
+        .reward-content {
+            background: linear-gradient(135deg, #1a1030 0%, #2a1545 40%, #1a1030 100%);
+            border: 1px solid rgba(123, 47, 190, 0.5);
+            border-radius: 20px;
+            padding: 32px 24px;
+            max-width: 360px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            box-shadow: 0 0 40px rgba(123, 47, 190, 0.3), 0 0 80px rgba(255, 107, 157, 0.1);
+            animation: rewardGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes rewardGlow {
+            from { box-shadow: 0 0 40px rgba(123, 47, 190, 0.3), 0 0 80px rgba(255, 107, 157, 0.1); }
+            to { box-shadow: 0 0 60px rgba(123, 47, 190, 0.5), 0 0 100px rgba(255, 107, 157, 0.2); }
+        }
+
+        .reward-content::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 40%, rgba(0, 212, 255, 0.06) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 60%, rgba(255, 107, 157, 0.06) 0%, transparent 50%);
+            animation: rewardShimmer 4s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes rewardShimmer {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(5%, 3%); }
+        }
+
+        .reward-photo {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            overflow: hidden;
+            border: 3px solid rgba(123, 47, 190, 0.6);
+            box-shadow: 0 0 20px rgba(123, 47, 190, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+
+        .reward-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .reward-photo-fallback {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #7B2FBE, #FF6B9D);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 64px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+
+        .reward-member {
+            font-size: 22px;
+            font-weight: 700;
+            color: #FF6B9D;
+            margin-bottom: 16px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            position: relative;
+            z-index: 1;
+        }
+
+        .reward-text {
+            font-size: 15px;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .reward-text .reward-hook {
+            display: block;
+            margin-bottom: 12px;
+            color: rgba(176, 196, 255, 0.95);
+        }
+
+        .reward-text .reward-closer {
+            display: block;
+            color: #00D4FF;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .reward-dismiss {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.35);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            position: relative;
+            z-index: 1;
+        }
+
     </style>
 </head>
 <body>
@@ -1081,6 +1218,15 @@
         </div>
     </div>
 
+    <div id="reward-modal" class="reward-modal">
+        <div class="reward-content">
+            <div class="reward-photo" id="reward-photo"></div>
+            <div class="reward-member" id="reward-member"></div>
+            <div class="reward-text" id="reward-text"></div>
+            <div class="reward-dismiss">tap to continue studying</div>
+        </div>
+    </div>
+
     <nav class="tab-nav">
         <button class="tab-btn active" data-tab="today-view">
             <div class="tab-icon">📅</div>
@@ -1194,6 +1340,7 @@
         let firebaseReady = false;
         let dbRef = null;
         let firebaseApp = null;
+        let connectedRef = null;
 
         try {
             firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
@@ -1230,6 +1377,10 @@
             if (dbRef) {
                 dbRef.off();
             }
+            if (connectedRef) {
+                connectedRef.off();
+                connectedRef = null;
+            }
             const isHash = /^[0-9a-f]{64}$/.test(passphrase);
             const pathKey = isHash ? passphrase : await derivePathKey(passphrase);
             localStorage.setItem('lila_dash_pin', pathKey);
@@ -1252,12 +1403,28 @@
                 if (firebaseReady && dbRef) {
                     dbRef.on('value', (snap) => {
                         const data = snap.val() || {};
+                        // Identify local-only entries before rebuilding cache
+                        const localOnly = {};
+                        for (let i = 0; i < localStorage.length; i++) {
+                            const key = localStorage.key(i);
+                            if (key && key.startsWith(this.prefix) && !(key in data)) {
+                                localOnly[key] = localStorage.getItem(key);
+                            }
+                        }
+                        // Rebuild cache from Firebase
                         this.cache = {};
                         Object.entries(data).forEach(([k, v]) => {
                             if (!k.startsWith(this.prefix)) return;
                             this.cache[k] = v;
                             localStorage.setItem(k, v);
                         });
+                        // Preserve local-only entries and push them to Firebase
+                        Object.entries(localOnly).forEach(([k, v]) => {
+                            this.cache[k] = v;
+                        });
+                        if (Object.keys(localOnly).length > 0) {
+                            this._firebaseWrite(localOnly);
+                        }
                         this.synced = true;
                         this._updateIndicator('online');
                         if (typeof refreshCurrentView === 'function') refreshCurrentView();
@@ -1265,7 +1432,8 @@
                         this._updateIndicator('error');
                     });
 
-                    firebase.database().ref('.info/connected').on('value', (snap) => {
+                    connectedRef = firebase.database().ref('.info/connected');
+                    connectedRef.on('value', (snap) => {
                         this._updateIndicator(snap.val() ? 'online' : 'offline');
                     });
                 } else {
@@ -1300,7 +1468,13 @@
 
             getTopicConfidence(subject, topic) {
                 const key = this.prefix + subject + '_' + topic + '_confidence';
-                return this.cache[key] || localStorage.getItem(key) || 'unrated';
+                const val = this.cache[key] || localStorage.getItem(key) || 'unrated';
+                return this._validConfidence(val);
+            }
+
+            _validConfidence(val) {
+                const allowed = ['not-yet', 'mostly', 'got-it', 'unrated'];
+                return allowed.includes(val) ? val : 'unrated';
             }
 
             getLastStudied(subject, topic) {
@@ -1309,7 +1483,7 @@
                 return date ? new Date(date) : null;
             }
 
-            setCardConfidence(subject, topic, cardId, level) {
+            setCardConfidence(subject, topic, cardId, level, totalCards) {
                 const key = this.prefix + subject + '_' + topic + '_card_' + cardId + '_confidence';
                 const dateKey = this.prefix + subject + '_' + topic + '_card_' + cardId + '_date';
                 const now = new Date().toISOString();
@@ -1317,16 +1491,19 @@
                 localStorage.setItem(dateKey, now);
                 this.cache[key] = level;
                 this.cache[dateKey] = now;
-                this._firebaseWrite({ [key]: level, [dateKey]: now });
-                this._deriveTopicConfidence(subject, topic);
+                const writes = { [key]: level, [dateKey]: now };
+                const derived = this._deriveTopicConfidence(subject, topic, totalCards);
+                if (derived) Object.assign(writes, derived);
+                this._firebaseWrite(writes);
             }
 
             getCardConfidence(subject, topic, cardId) {
                 const key = this.prefix + subject + '_' + topic + '_card_' + cardId + '_confidence';
-                return this.cache[key] || localStorage.getItem(key) || 'unrated';
+                const val = this.cache[key] || localStorage.getItem(key) || 'unrated';
+                return this._validConfidence(val);
             }
 
-            _deriveTopicConfidence(subject, topic) {
+            _deriveTopicConfidence(subject, topic, totalCards) {
                 const cardPrefix = this.prefix + subject + '_' + topic + '_card_';
                 const ratings = [];
                 const allKeys = Object.keys(this.cache).length
@@ -1338,11 +1515,24 @@
                         if (val && val !== 'unrated') ratings.push(val);
                     }
                 });
-                if (ratings.length === 0) return;
+                if (ratings.length === 0) return null;
+                // Coverage threshold: need at least 50% of cards rated
+                if (totalCards && ratings.length < Math.ceil(totalCards * 0.5)) return null;
+                // Floor rule: any "not-yet" caps topic at "mostly"
+                const hasNotYet = ratings.includes('not-yet');
                 const scoreMap = { 'not-yet': 1, 'mostly': 2, 'got-it': 3 };
                 const avg = ratings.reduce((sum, r) => sum + (scoreMap[r] || 2), 0) / ratings.length;
-                const level = avg >= 2.5 ? 'got-it' : avg >= 1.5 ? 'mostly' : 'not-yet';
-                this.setTopicConfidence(subject, topic, level);
+                let level = avg >= 2.5 ? 'got-it' : avg >= 1.5 ? 'mostly' : 'not-yet';
+                if (hasNotYet && level === 'got-it') level = 'mostly';
+                // Write to cache and localStorage, return Firebase payload for batching
+                const topicKey = this.prefix + subject + '_' + topic + '_confidence';
+                const topicDateKey = this.prefix + subject + '_' + topic + '_date';
+                const now = new Date().toISOString();
+                localStorage.setItem(topicKey, level);
+                localStorage.setItem(topicDateKey, now);
+                this.cache[topicKey] = level;
+                this.cache[topicDateKey] = now;
+                return { [topicKey]: level, [topicDateKey]: now };
             }
 
             exportData() {
@@ -1362,12 +1552,14 @@
             importData(jsonStr) {
                 try {
                     const data = JSON.parse(jsonStr);
+                    const imported = {};
                     for (const [key, value] of Object.entries(data)) {
                         if (!key.startsWith(this.prefix)) continue;
                         localStorage.setItem(key, value);
                         this.cache[key] = value;
+                        imported[key] = value;
                     }
-                    if (firebaseReady && dbRef) dbRef.set(this.cache);
+                    if (firebaseReady && dbRef) dbRef.update(imported);
                     return true;
                 } catch (e) {
                     alert('Invalid JSON. Please check and try again.');
@@ -1437,14 +1629,6 @@
         updateDate();
         updateCountdown();
 
-        function cardHash(text) {
-            let h = 0;
-            for (let i = 0; i < text.length; i++) {
-                h = ((h << 5) - h + text.charCodeAt(i)) | 0;
-            }
-            return Math.abs(h).toString(36);
-        }
-
         class FlashcardEngine {
             constructor(data) {
                 this.data = data;
@@ -1475,7 +1659,7 @@
                                     type: 'definition',
                                     subject,
                                     topic,
-                                    id: cardHash(def.term),
+                                    id: def.id,
                                     front: def.term,
                                     back: def.definition
                                 });
@@ -1488,7 +1672,7 @@
                                     type: 'question',
                                     subject,
                                     topic,
-                                    id: cardHash(q.text),
+                                    id: q.id,
                                     front: q.text,
                                     back: q.answer
                                 });
@@ -1542,6 +1726,162 @@
         }
 
         const flashcardEngine = new FlashcardEngine(FLASHCARD_DATA);
+
+        // KWANGYA Study Log: AESPA reward system
+        const REWARD_HOOKS = {
+            "Environmental Science": [
+                "KWANGYA is basically an ecosystem too, and you are learning to protect both.",
+                "Black Mamba threatens the virtual world; climate change threatens the real one. You are studying to fight both.",
+                "NingNing once said the natural world inspires her vocals. Your Env Sci knowledge would impress her.",
+                "Every biome you learn is another level cleared in the real-world KWANGYA.",
+                "Sustainability is the ultimate concept. AESPA would approve of your revision."
+            ],
+            "Music": [
+                "The synth drop in Supernova? That is dynamic contrast, and you just studied it.",
+                "You could probably analyse an AESPA track for your listening exam now.",
+                "Next Level has more time signature changes than most textbooks. You are ready for this.",
+                "Karina's vocal tone is a case study in timbre. You are learning to hear what others miss.",
+                "Every musical concept you revise makes the next comeback hit even better to listen to."
+            ],
+            "English": [
+                "AESPA lyrics are full of metaphor and imagery. You are learning to see what most people miss.",
+                "Giselle writes in three languages. Your English analysis skills are building the same kind of precision.",
+                "Wilde would have appreciated AESPA's commitment to dramatic irony.",
+                "Close reading is a superpower. You are training yours with every card.",
+                "The best writers notice patterns. So do the best MYs. You are doing both right now."
+            ],
+            "Drama": [
+                "AESPA's stage presence is basically everything you are studying: voice, movement, proxemics, lighting.",
+                "Lady Bracknell's interrogation scene has the same energy as Karina's stare in the Savage MV.",
+                "Winter's facial expressions during performances would score full marks in your acting concepts section.",
+                "Proxemics, levels, stillness: AESPA performances are a Drama exam in motion.",
+                "You are building the vocabulary to describe what makes a performance unforgettable."
+            ],
+            "French": [
+                "Giselle speaks Japanese, Korean, and English fluently. French is just your fourth language energy.",
+                "AESPA performed in Paris. Imagine understanding every word at the concert AND the cafe after.",
+                "Savoir, pouvoir, vouloir: the three verbs of a K-pop trainee. You are mastering them too.",
+                "Every conjugation you learn brings you closer to ordering croissants at the Paris fan meet.",
+                "French grammar is tough, but so is learning choreography in heels. You have got this."
+            ],
+            "Maths": [
+                "If Supernova hit 100 million streams in 10 days, that is 10 million per day. Your percentage skills could calculate the growth rate.",
+                "K-pop choreography is basically applied geometry: angles, symmetry, spatial reasoning.",
+                "AESPA's comeback schedule is more complex than a simultaneous equation, and you are solving both.",
+                "Probability says you will see at least one topic you revised in the exam. Maths is on your side.",
+                "Every formula you memorise is a cheat code for the real KWANGYA."
+            ],
+            "Modern Studies": [
+                "K-pop's global influence is basically a case study in soft power, which you could write about in Section 3.",
+                "AESPA has fans in 150+ countries. That is more international reach than most pressure groups you are studying.",
+                "The way fandoms organise online is textbook democratic participation. Your Modern Studies teacher would agree.",
+                "Media influence, representation, global citizenship: K-pop covers half your syllabus without trying.",
+                "You are learning how the world works. That is the most powerful thing anyone can study."
+            ],
+            "Art and Design": [
+                "AESPA's visual concepts: line, colour, form, texture, target audience. You literally studied this today.",
+                "The Whiplash album design would make an excellent design studies case. Form follows function, even in K-pop.",
+                "Van Gogh painted starry nights; AESPA films in KWANGYA. Both use colour to create emotion.",
+                "Every design principle you learn sharpens the way you see album art, MVs, and stage design.",
+                "Colour theory, contrast, hierarchy: AESPA's creative team uses them all. So will you in your exam."
+            ]
+        };
+
+        const AESPA_MEMBERS = ["Karina", "Giselle", "Winter", "NingNing"];
+
+        const CLOSERS = [
+            "Keep going. The exam does not stand a chance.",
+            "10 more cards and you level up in KWANGYA.",
+            "MY (that is you) energy is unmatched right now.",
+            "You are literally building your future one card at a time.",
+            "AESPA trained for years before debut. You are putting in the same work.",
+            "Confidence is not magic. It is revision. And you are doing it.",
+            "Every card you rate is a step closer to the grade you want.",
+            "Your brain is absorbing more than you think. Trust the process.",
+            "Winter would respect this level of dedication.",
+            "Next Level is not just a song. It is what you are doing right now.",
+            "The exam is temporary. The knowledge stays.",
+            "You are not just revising. You are proving something to yourself.",
+            "NingNing's high note has nothing on your study streak.",
+            "Take a breath. You are doing brilliantly.",
+            "Karina once said discipline is the foundation of everything. Look at you.",
+            "This is what consistent effort looks like.",
+            "Small steps, big results. You are living proof.",
+            "Future you is going to be so grateful for this session.",
+            "You are outworking everyone who gave up ten cards ago.",
+            "Giselle would write a verse about this comeback story.",
+            "One topic at a time. That is all it takes.",
+            "You just proved you can focus when it matters.",
+            "This session is going on your KWANGYA permanent record (the good kind).",
+            "Stamina is a skill. You are training it right now.",
+            "Not every hero wears a cape. Some use flashcards.",
+            "You are closer to your target grade than you were ten minutes ago.",
+            "AESPA's choreographer plans every beat. You are planning every mark.",
+            "Rest when you need to. But right now, you are on fire.",
+            "If revision were a comeback, this would be the chorus.",
+            "The exam paper will not know what hit it."
+        ];
+
+        let rewardCounter = 0;
+        let rewardTimeout = null;
+
+        function generateReward(subject) {
+            const member = AESPA_MEMBERS[Math.floor(Math.random() * AESPA_MEMBERS.length)];
+            const hooks = REWARD_HOOKS[subject] || REWARD_HOOKS["Environmental Science"];
+            const hook = hooks[Math.floor(Math.random() * hooks.length)];
+            const closer = CLOSERS[Math.floor(Math.random() * CLOSERS.length)];
+            const photoIndex = (Math.floor(Math.random() * 6)) + 1;
+            return { member, hook, closer, photoIndex };
+        }
+
+        function showReward(subject) {
+            const r = generateReward(subject);
+
+            const photoEl = document.getElementById('reward-photo');
+            const img = new Image();
+            img.src = 'photos/aespa-' + r.photoIndex + '.jpg';
+            img.alt = r.member;
+            img.onerror = function() {
+                photoEl.innerHTML = '<div class="reward-photo-fallback">' + r.member.charAt(0) + '</div>';
+            };
+            img.onload = function() {
+                photoEl.innerHTML = '';
+                photoEl.appendChild(img);
+            };
+            photoEl.innerHTML = '<div class="reward-photo-fallback">' + r.member.charAt(0) + '</div>';
+
+            document.getElementById('reward-member').textContent = r.member;
+            document.getElementById('reward-text').innerHTML =
+                '<span class="reward-hook">' + r.hook + '</span>' +
+                '<span class="reward-closer">' + r.closer + '</span>';
+
+            const modal = document.getElementById('reward-modal');
+            modal.classList.add('show');
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    modal.classList.add('visible');
+                });
+            });
+
+            if (rewardTimeout) clearTimeout(rewardTimeout);
+            rewardTimeout = setTimeout(() => dismissReward(), 6000);
+        }
+
+        function dismissReward() {
+            if (rewardTimeout) {
+                clearTimeout(rewardTimeout);
+                rewardTimeout = null;
+            }
+            const modal = document.getElementById('reward-modal');
+            modal.classList.remove('visible');
+            setTimeout(() => {
+                modal.classList.remove('show');
+            }, 300);
+        }
+
+        document.getElementById('reward-modal').addEventListener('click', () => {
+            dismissReward();
+        });
 
         function renderToday() {
             renderDailyDrill();
@@ -1968,11 +2308,12 @@
             flashcardEngine.filterSubject = e.target.value;
             flashcardEngine.buildCards();
             updateFlashcardDisplay();
+            rewardCounter = 0;
 
             const topics = flashcardEngine.filterSubject
                 ? Object.keys(FLASHCARD_DATA.subjects[e.target.value].topics)
                 : [];
-            document.getElementById('topic-filter').innerHTML = '<option value="">All Topics</option>' + 
+            document.getElementById('topic-filter').innerHTML = '<option value="">All Topics</option>' +
                 topics.map(t => `<option value="${t}">${t.replace(/-/g, ' ')}</option>`).join('');
             flashcardEngine.filterTopic = '';
         });
@@ -1981,12 +2322,14 @@
             flashcardEngine.filterTopic = e.target.value;
             flashcardEngine.buildCards();
             updateFlashcardDisplay();
+            rewardCounter = 0;
         });
 
         document.getElementById('card-mode').addEventListener('change', (e) => {
             flashcardEngine.cardMode = e.target.value;
             flashcardEngine.buildCards();
             updateFlashcardDisplay();
+            rewardCounter = 0;
         });
 
         document.getElementById('flashcard').addEventListener('click', () => {
@@ -2020,7 +2363,21 @@
                 const card = flashcardEngine.getCurrentCard();
                 if (card) {
                     const rating = btn.classList[1];
-                    storage.setCardConfidence(card.subject, card.topic, card.id, rating);
+                    const topicData = FLASHCARD_DATA.subjects[card.subject].topics[card.topic];
+                    const totalCards = (topicData.definitions || []).length + (topicData.questions || []).length;
+                    storage.setCardConfidence(card.subject, card.topic, card.id, rating, totalCards);
+
+                    rewardCounter++;
+                    const allCurrentCards = flashcardEngine.getCount();
+                    const ratedCount = flashcardEngine.cards.filter(c => {
+                        return storage.getCardConfidence(c.subject, c.topic, c.id) !== 'unrated';
+                    }).length;
+                    const isTopicComplete = (allCurrentCards > 0 && ratedCount >= allCurrentCards);
+                    if (rewardCounter >= 10 || isTopicComplete) {
+                        showReward(card.subject);
+                        rewardCounter = 0;
+                    }
+
                     flashcardEngine.next();
                     updateFlashcardDisplay();
                 }
