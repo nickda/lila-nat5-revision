@@ -2572,10 +2572,11 @@
             const { date: nextExamDate } = getNextExam();
             const now = new Date();
 
-            // Score every topic
+            // Score every topic (skip subjects whose exam has passed)
             for (const [subject, subjectData] of Object.entries(FLASHCARD_DATA.subjects)) {
                 const examDate = getSubjectExamDate(subject) || nextExamDate;
-                const daysUntilExam = Math.max(0, (examDate - now) / (1000 * 60 * 60 * 24));
+                const daysUntilExam = (examDate - now) / (1000 * 60 * 60 * 24);
+                if (daysUntilExam < 0) continue;
                 const examProximityScore = 100 / (daysUntilExam * 0.3 + 1);
 
                 for (const [topic, topicData] of Object.entries(subjectData.topics)) {
