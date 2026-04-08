@@ -1515,14 +1515,14 @@
         }
 
         function getPriorities(count = 6) {
-            const priorities = [];
+            const allTopics = [];
             const { date: nextExamDate } = getNextExam();
             const now = new Date();
 
+            // Score every topic
             for (const [subject, subjectData] of Object.entries(FLASHCARD_DATA.subjects)) {
                 const examDate = EXAM_DATES[subject] || nextExamDate;
                 const daysUntilExam = Math.max(0, (examDate - now) / (1000 * 60 * 60 * 24));
-                // Proximity: sharp curve, subjects within 14 days score 50+
                 const examProximityScore = 100 / (daysUntilExam * 0.3 + 1);
 
                 for (const [topic, topicData] of Object.entries(subjectData.topics)) {
@@ -1530,28 +1530,60 @@
                     const confidenceScore = confidence === 'got-it' ? 0 : confidence === 'mostly' ? 30 : confidence === 'not-yet' ? 70 : 50;
                     const lastStudied = storage.getLastStudied(subject, topic);
                     const daysSinceStudy = lastStudied ? (now - lastStudied) / (1000 * 60 * 60 * 24) : 14;
-                    // Cap staleness at 30 days so it doesn't drown out proximity
                     const stalenessScore = Math.min(daysSinceStudy, 30) * 2;
 
                     const pastPaperFreq = PAST_PAPER_DATA[subject]?.topics?.[topic]?.frequency || 'low';
                     const frequencyScore = pastPaperFreq === 'high' ? 60 : pastPaperFreq === 'medium' ? 30 : 10;
 
-                    // Weights: proximity 40%, confidence 25%, frequency 20%, staleness 15%
                     let score = (examProximityScore * 0.4) + (confidenceScore * 0.25) + (frequencyScore * 0.2) + (stalenessScore * 0.15);
 
-                    // Subject difficulty boost (capped so it nudges, not dominates)
                     const difficulty = SUBJECT_DIFFICULTY[subject] || 'normal';
-                    if (difficulty === 'needs-work') score *= 1.3;
+                    if (difficulty === 'needs-work') score += 5;
 
-                    // Per-topic weakness boost
                     const weakTopics = TOPIC_WEAKNESSES[subject] || [];
                     if (weakTopics.includes(topic)) score *= 1.5;
 
-                    priorities.push({ subject, topic, frequency: pastPaperFreq, score });
+                    allTopics.push({ subject, topic, frequency: pastPaperFreq, score, daysUntilExam });
                 }
             }
 
-            return priorities.sort((a, b) => b.score - a.score).slice(0, count);
+            // Sort all topics by score
+            allTopics.sort((a, b) => b.score - a.score);
+
+            // Find the nearest exam subject (from flashcard subjects only)
+            const subjectExamDates = {};
+            for (const t of allTopics) {
+                if (!subjectExamDates[t.subject] || t.daysUntilExam < subjectExamDates[t.subject]) {
+                    subjectExamDates[t.subject] = t.daysUntilExam;
+                }
+            }
+            const nearestSubject = Object.entries(subjectExamDates)
+                .sort((a, b) => a[1] - b[1])[0]?.[0];
+
+            // Build result: guarantee 2 slots for nearest exam subject, max 2 per subject
+            const result = [];
+            const subjectCounts = {};
+
+            // First: top 2 from nearest exam subject
+            for (const t of allTopics) {
+                if (result.length >= 2) break;
+                if (t.subject === nearestSubject) {
+                    result.push(t);
+                    subjectCounts[nearestSubject] = (subjectCounts[nearestSubject] || 0) + 1;
+                }
+            }
+
+            // Then: fill remaining slots by score, max 2 per subject
+            for (const t of allTopics) {
+                if (result.length >= count) break;
+                if (result.includes(t)) continue;
+                const sc = subjectCounts[t.subject] || 0;
+                if (sc >= 2) continue;
+                result.push(t);
+                subjectCounts[t.subject] = sc + 1;
+            }
+
+            return result;
         }
 
         function updateProgressSummary() {
