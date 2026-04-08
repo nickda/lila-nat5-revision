@@ -1103,6 +1103,18 @@
             "Art and Design": new Date(2026, 4, 26, 10, 0)
         };
 
+        // Map FLASHCARD_DATA subject names to their earliest EXAM_DATES entry
+        function getSubjectExamDate(subject) {
+            if (EXAM_DATES[subject]) return EXAM_DATES[subject];
+            const prefix = subject === 'Maths' ? 'Maths' : subject === 'English' ? 'English' : null;
+            if (!prefix) return null;
+            let earliest = null;
+            for (const [key, date] of Object.entries(EXAM_DATES)) {
+                if (key.startsWith(prefix) && (!earliest || date < earliest)) earliest = date;
+            }
+            return earliest;
+        }
+
         const EXAM_CHEAT_SHEETS = {
             "Environmental Science": "2h 30min, 100 marks. Bring: calculator, pencil, ruler. Supplementary booklet provided. Read questions carefully  -  many require 'explain' not just 'state.' Show calculations. Use correct units.",
             "Music": "45 min, 40 marks. Listening paper  -  audio played in exam hall. Read questions BEFORE each excerpt plays. Use correct musical terminology. Literacy section: know note values, key signatures, Italian terms. No instruments allowed.",
@@ -1189,10 +1201,14 @@
         }
 
         async function connectFirebase(passphrase) {
-            const pathKey = await derivePathKey(passphrase);
-            localStorage.setItem('lila_dash_pin', passphrase);
+            // Detach any existing Firebase listeners before reconnecting
+            if (dbRef) {
+                dbRef.off();
+            }
+            const isHash = /^[0-9a-f]{64}$/.test(passphrase);
+            const pathKey = isHash ? passphrase : await derivePathKey(passphrase);
+            localStorage.setItem('lila_dash_pin', pathKey);
             dbRef = firebaseReady ? firebase.database().ref('dashboards/' + pathKey) : null;
-            // Reinitialize storage with Firebase sync
             storage = new Storage();
             if (typeof refreshCurrentView === 'function') refreshCurrentView();
         }
@@ -1211,8 +1227,12 @@
                 if (firebaseReady && dbRef) {
                     dbRef.on('value', (snap) => {
                         const data = snap.val() || {};
-                        this.cache = data;
-                        Object.entries(data).forEach(([k, v]) => localStorage.setItem(k, v));
+                        this.cache = {};
+                        Object.entries(data).forEach(([k, v]) => {
+                            if (!k.startsWith(this.prefix)) return;
+                            this.cache[k] = v;
+                            localStorage.setItem(k, v);
+                        });
                         this.synced = true;
                         this._updateIndicator('online');
                         if (typeof refreshCurrentView === 'function') refreshCurrentView();
@@ -1282,6 +1302,7 @@
                 try {
                     const data = JSON.parse(jsonStr);
                     for (const [key, value] of Object.entries(data)) {
+                        if (!key.startsWith(this.prefix)) continue;
                         localStorage.setItem(key, value);
                         this.cache[key] = value;
                     }
@@ -1521,7 +1542,7 @@
 
             // Score every topic
             for (const [subject, subjectData] of Object.entries(FLASHCARD_DATA.subjects)) {
-                const examDate = EXAM_DATES[subject] || nextExamDate;
+                const examDate = getSubjectExamDate(subject) || nextExamDate;
                 const daysUntilExam = Math.max(0, (examDate - now) / (1000 * 60 * 60 * 24));
                 const examProximityScore = 100 / (daysUntilExam * 0.3 + 1);
 
@@ -1842,6 +1863,7 @@
         }
 
         function changePassphrase() {
+            if (!confirm('Changing the passphrase will start a fresh sync. Your local progress stays, but any data saved under the old passphrase on other devices will not carry over.')) return;
             localStorage.removeItem('lila_dash_pin');
             document.getElementById('pin-overlay').classList.remove('hidden');
             document.getElementById('pin-input').value = '';
