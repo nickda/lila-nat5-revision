@@ -1118,7 +1118,7 @@
 
         // Subject difficulty: boosts priority weighting for weak subjects
         // 'hard' = daily drill subject (Maths, French) - always appears in daily drill
-        // 'needs-work' = intensive blocks (Drama) - gets 1.5x priority boost
+        // 'needs-work' = intensive blocks (Drama) - gets 1.3x priority boost
         // 'normal' = everything else - standard adaptive weighting
         const SUBJECT_DIFFICULTY = {
             "Maths": "hard",
@@ -1129,6 +1129,12 @@
             "English": "normal",
             "Modern Studies": "normal",
             "Art and Design": "normal"
+        };
+
+        // Per-topic weakness overrides: topics flagged here get a priority boost
+        // regardless of their confidence rating
+        const TOPIC_WEAKNESSES = {
+            "Maths": ["Algebraic-Fractions"]
         };
 
         // Daily drill subjects: these get a dedicated section in Today view
@@ -1515,24 +1521,31 @@
 
             for (const [subject, subjectData] of Object.entries(FLASHCARD_DATA.subjects)) {
                 const examDate = EXAM_DATES[subject] || nextExamDate;
-                const daysUntilExam = (examDate - now) / (1000 * 60 * 60 * 24);
-                const examProximityScore = 100 / (daysUntilExam + 1);
+                const daysUntilExam = Math.max(0, (examDate - now) / (1000 * 60 * 60 * 24));
+                // Proximity: sharp curve, subjects within 14 days score 50+
+                const examProximityScore = 100 / (daysUntilExam * 0.3 + 1);
 
                 for (const [topic, topicData] of Object.entries(subjectData.topics)) {
                     const confidence = storage.getTopicConfidence(subject, topic);
                     const confidenceScore = confidence === 'got-it' ? 0 : confidence === 'mostly' ? 30 : confidence === 'not-yet' ? 70 : 50;
                     const lastStudied = storage.getLastStudied(subject, topic);
-                    const daysSinceStudy = lastStudied ? (now - lastStudied) / (1000 * 60 * 60 * 24) : 999;
-                    const stalenessScore = daysSinceStudy * 2;
+                    const daysSinceStudy = lastStudied ? (now - lastStudied) / (1000 * 60 * 60 * 24) : 14;
+                    // Cap staleness at 30 days so it doesn't drown out proximity
+                    const stalenessScore = Math.min(daysSinceStudy, 30) * 2;
 
                     const pastPaperFreq = PAST_PAPER_DATA[subject]?.topics?.[topic]?.frequency || 'low';
                     const frequencyScore = pastPaperFreq === 'high' ? 60 : pastPaperFreq === 'medium' ? 30 : 10;
 
-                    let score = (examProximityScore * 0.3) + (confidenceScore * 0.3) + (frequencyScore * 0.2) + (stalenessScore * 0.2);
+                    // Weights: proximity 40%, confidence 25%, frequency 20%, staleness 15%
+                    let score = (examProximityScore * 0.4) + (confidenceScore * 0.25) + (frequencyScore * 0.2) + (stalenessScore * 0.15);
 
-                    // Apply difficulty boost: 'needs-work' subjects get 1.5x priority
+                    // Subject difficulty boost (capped so it nudges, not dominates)
                     const difficulty = SUBJECT_DIFFICULTY[subject] || 'normal';
-                    if (difficulty === 'needs-work') score *= 1.5;
+                    if (difficulty === 'needs-work') score *= 1.3;
+
+                    // Per-topic weakness boost
+                    const weakTopics = TOPIC_WEAKNESSES[subject] || [];
+                    if (weakTopics.includes(topic)) score *= 1.5;
 
                     priorities.push({ subject, topic, frequency: pastPaperFreq, score });
                 }
