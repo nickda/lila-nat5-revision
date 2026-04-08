@@ -1722,8 +1722,8 @@
                 return;
             }
 
-            document.getElementById('card-front-content').textContent = card.front;
-            document.getElementById('card-back-content').textContent = card.back;
+            document.getElementById('card-front-content').innerHTML = card.front;
+            document.getElementById('card-back-content').innerHTML = card.back;
             document.getElementById('flashcard').classList.remove('flipped');
             document.getElementById('card-counter').textContent = `Card ${flashcardEngine.getIndex()} of ${flashcardEngine.getCount()}`;
         }
