@@ -1665,6 +1665,13 @@
                 }
             }
 
+            _keysWithPrefix(prefix) {
+                const source = Object.keys(this.cache).length
+                    ? Object.keys(this.cache)
+                    : Array.from({ length: localStorage.length }, (_, i) => localStorage.key(i));
+                return source.filter(k => k.startsWith(prefix));
+            }
+
             _persistConfidence(key, dateKey, level) {
                 const now = new Date().toISOString();
                 localStorage.setItem(key, level);
@@ -1700,11 +1707,8 @@
                 // Fall back to most recent card-level date in this topic
                 const cardPrefix = this.prefix + subject + '_' + topic + '_card_';
                 let latest = null;
-                const allKeys = Object.keys(this.cache).length
-                    ? Object.keys(this.cache)
-                    : Array.from({ length: localStorage.length }, (_, i) => localStorage.key(i));
-                allKeys.forEach(k => {
-                    if (k.startsWith(cardPrefix) && k.endsWith('_date')) {
+                this._keysWithPrefix(cardPrefix).forEach(k => {
+                    if (k.endsWith('_date')) {
                         const val = this.cache[k] || localStorage.getItem(k);
                         if (val) {
                             const d = new Date(val);
@@ -1733,11 +1737,8 @@
             _deriveTopicConfidence(subject, topic, totalCards) {
                 const cardPrefix = this.prefix + subject + '_' + topic + '_card_';
                 const ratings = [];
-                const allKeys = Object.keys(this.cache).length
-                    ? Object.keys(this.cache)
-                    : Array.from({ length: localStorage.length }, (_, i) => localStorage.key(i));
-                allKeys.forEach(key => {
-                    if (key.startsWith(cardPrefix) && key.endsWith('_confidence')) {
+                this._keysWithPrefix(cardPrefix).forEach(key => {
+                    if (key.endsWith('_confidence')) {
                         const val = this.cache[key] || localStorage.getItem(key);
                         if (val && val !== 'unrated') ratings.push(val);
                     }
@@ -2412,10 +2413,10 @@
 
             container.innerHTML = DAILY_DRILL_SUBJECTS.map(drill => {
                 const topic = lockedDrills[drill.subject];
-                if (!topic) return '';
+                if (!topic) { allDrillsDone = false; return ''; }
 
                 const lastStudied = storage.getLastStudied(drill.subject, topic);
-                const doneToday = lastStudied && (now - lastStudied) < (1000 * 60 * 60 * 16);
+                const doneToday = lastStudied && (lastStudied.getFullYear() + '-' + String(lastStudied.getMonth() + 1).padStart(2, '0') + '-' + String(lastStudied.getDate()).padStart(2, '0')) === todayKey;
 
                 if (!doneToday) allDrillsDone = false;
 
@@ -2485,7 +2486,7 @@
 
             container.innerHTML = priorities.map(p => {
                 const lastStudied = storage.getLastStudied(p.subject, p.topic);
-                const doneToday = lastStudied && (now - lastStudied) < (1000 * 60 * 60 * 16);
+                const doneToday = lastStudied && (lastStudied.getFullYear() + '-' + String(lastStudied.getMonth() + 1).padStart(2, '0') + '-' + String(lastStudied.getDate()).padStart(2, '0')) === todayKey;
 
                 if (!doneToday) {
                     allDone = false;
