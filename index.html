@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lila's National 5 Revision Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.0.0/firebase-database-compat.js"></script>
     <style>
@@ -1403,7 +1406,6 @@
                 if (firebaseReady && dbRef) {
                     dbRef.on('value', (snap) => {
                         const data = snap.val() || {};
-                        // Identify local-only entries before rebuilding cache
                         const localOnly = {};
                         for (let i = 0; i < localStorage.length; i++) {
                             const key = localStorage.key(i);
@@ -1411,7 +1413,6 @@
                                 localOnly[key] = localStorage.getItem(key);
                             }
                         }
-                        // Rebuild cache from Firebase
                         this.cache = {};
                         Object.entries(data).forEach(([k, v]) => {
                             if (!k.startsWith(this.prefix)) return;
@@ -1455,15 +1456,19 @@
                 }
             }
 
-            setTopicConfidence(subject, topic, level) {
-                const key = this.prefix + subject + '_' + topic + '_confidence';
-                const dateKey = this.prefix + subject + '_' + topic + '_date';
+            _persistConfidence(key, dateKey, level) {
                 const now = new Date().toISOString();
                 localStorage.setItem(key, level);
                 localStorage.setItem(dateKey, now);
                 this.cache[key] = level;
                 this.cache[dateKey] = now;
-                this._firebaseWrite({ [key]: level, [dateKey]: now });
+                return { [key]: level, [dateKey]: now };
+            }
+
+            setTopicConfidence(subject, topic, level) {
+                const key = this.prefix + subject + '_' + topic + '_confidence';
+                const dateKey = this.prefix + subject + '_' + topic + '_date';
+                this._firebaseWrite(this._persistConfidence(key, dateKey, level));
             }
 
             getTopicConfidence(subject, topic) {
@@ -1486,12 +1491,7 @@
             setCardConfidence(subject, topic, cardId, level, totalCards) {
                 const key = this.prefix + subject + '_' + topic + '_card_' + cardId + '_confidence';
                 const dateKey = this.prefix + subject + '_' + topic + '_card_' + cardId + '_date';
-                const now = new Date().toISOString();
-                localStorage.setItem(key, level);
-                localStorage.setItem(dateKey, now);
-                this.cache[key] = level;
-                this.cache[dateKey] = now;
-                const writes = { [key]: level, [dateKey]: now };
+                const writes = this._persistConfidence(key, dateKey, level);
                 const derived = this._deriveTopicConfidence(subject, topic, totalCards);
                 if (derived) Object.assign(writes, derived);
                 this._firebaseWrite(writes);
@@ -1524,15 +1524,9 @@
                 const avg = ratings.reduce((sum, r) => sum + (scoreMap[r] || 2), 0) / ratings.length;
                 let level = avg >= 2.5 ? 'got-it' : avg >= 1.5 ? 'mostly' : 'not-yet';
                 if (hasNotYet && level === 'got-it') level = 'mostly';
-                // Write to cache and localStorage, return Firebase payload for batching
                 const topicKey = this.prefix + subject + '_' + topic + '_confidence';
                 const topicDateKey = this.prefix + subject + '_' + topic + '_date';
-                const now = new Date().toISOString();
-                localStorage.setItem(topicKey, level);
-                localStorage.setItem(topicDateKey, now);
-                this.cache[topicKey] = level;
-                this.cache[topicDateKey] = now;
-                return { [topicKey]: level, [topicDateKey]: now };
+                return this._persistConfidence(topicKey, topicDateKey, level);
             }
 
             exportData() {
@@ -2136,6 +2130,10 @@
 
             document.getElementById('card-front-content').innerHTML = card.front;
             document.getElementById('card-back-content').innerHTML = card.back;
+            if (typeof renderMathInElement === 'function') {
+                renderMathInElement(document.getElementById('card-front-content'), { delimiters: [{ left: '$', right: '$', display: false }], throwOnError: false });
+                renderMathInElement(document.getElementById('card-back-content'), { delimiters: [{ left: '$', right: '$', display: false }], throwOnError: false });
+            }
             document.getElementById('flashcard').classList.remove('flipped');
             document.getElementById('card-counter').textContent = `Card ${flashcardEngine.getIndex()} of ${flashcardEngine.getCount()}`;
         }
