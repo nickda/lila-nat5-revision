@@ -227,6 +227,43 @@
             margin-top: 12px;
         }
 
+        .studied-today {
+            margin-top: 20px;
+        }
+        .studied-today-title {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #6a9a6f;
+            margin-bottom: 10px;
+        }
+        .studied-today-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: rgba(74, 154, 90, 0.1);
+            border-left: 3px solid #4a9a5a;
+            border-radius: 6px;
+            margin-bottom: 4px;
+            font-size: 13px;
+        }
+        .studied-today-topic {
+            color: #b0e0c0;
+        }
+        .studied-today-subject {
+            color: #6a9a6f;
+            font-size: 11px;
+        }
+        .studied-today-confidence {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: rgba(74, 154, 90, 0.2);
+            color: #7aff9a;
+        }
+
         .study-btn {
             background: #6b9eff;
             color: white;
@@ -1304,6 +1341,7 @@
                 <div id="priorities-container"></div>
             </div>
 
+            <div id="studied-today-container"></div>
             <div class="progress-summary" id="progress-summary"></div>
         </div>
 
@@ -2376,6 +2414,7 @@
         function renderToday() {
             renderDailyDrill();
             renderPriorities();
+            renderStudiedToday();
             updateProgressSummary();
         }
 
@@ -2632,9 +2671,49 @@
             }
 
             document.getElementById('progress-summary').innerHTML = `
-                You've rated <strong>${rated}</strong> of <strong>${total}</strong> topics. 
+                You've rated <strong>${rated}</strong> of <strong>${total}</strong> topics.
                 <strong>${examsInWeek}</strong> exams in the next 7 days.
                 <br><strong>${nextExam}</strong> is coming up!
+            `;
+        }
+
+        function renderStudiedToday() {
+            const container = document.getElementById('studied-today-container');
+            const todayKey = getLocalDateKey();
+            const studied = [];
+
+            for (const [subject, subjectData] of Object.entries(FLASHCARD_DATA.subjects)) {
+                for (const topic of Object.keys(subjectData.topics)) {
+                    const lastStudied = storage.getLastStudied(subject, topic);
+                    if (!lastStudied) continue;
+                    const studiedDate = lastStudied.getFullYear() + '-' + String(lastStudied.getMonth() + 1).padStart(2, '0') + '-' + String(lastStudied.getDate()).padStart(2, '0');
+                    if (studiedDate === todayKey) {
+                        const confidence = storage.getTopicConfidence(subject, topic);
+                        studied.push({ subject, topic, confidence });
+                    }
+                }
+            }
+
+            if (studied.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            const confLabel = (c) => c === 'got-it' ? 'Got it' : c === 'mostly' ? 'Mostly' : c === 'not-yet' ? 'Not yet' : 'Studied';
+
+            container.innerHTML = `
+                <div class="studied-today">
+                    <div class="studied-today-title">Studied Today (${studied.length} topics)</div>
+                    ${studied.map(s => `
+                        <div class="studied-today-item">
+                            <div>
+                                <div class="studied-today-topic">${s.topic.replace(/-/g, ' ')}</div>
+                                <div class="studied-today-subject">${s.subject}</div>
+                            </div>
+                            <div class="studied-today-confidence">${confLabel(s.confidence)}</div>
+                        </div>
+                    `).join('')}
+                </div>
             `;
         }
 
