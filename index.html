@@ -1692,9 +1692,27 @@
             }
 
             getLastStudied(subject, topic) {
+                // Check topic-level date first
                 const key = this.prefix + subject + '_' + topic + '_date';
-                const date = this.cache[key] || localStorage.getItem(key);
-                return date ? new Date(date) : null;
+                const topicDate = this.cache[key] || localStorage.getItem(key);
+                if (topicDate) return new Date(topicDate);
+
+                // Fall back to most recent card-level date in this topic
+                const cardPrefix = this.prefix + subject + '_' + topic + '_card_';
+                let latest = null;
+                const allKeys = Object.keys(this.cache).length
+                    ? Object.keys(this.cache)
+                    : Array.from({ length: localStorage.length }, (_, i) => localStorage.key(i));
+                allKeys.forEach(k => {
+                    if (k.startsWith(cardPrefix) && k.endsWith('_date')) {
+                        const val = this.cache[k] || localStorage.getItem(k);
+                        if (val) {
+                            const d = new Date(val);
+                            if (!latest || d > latest) latest = d;
+                        }
+                    }
+                });
+                return latest;
             }
 
             setCardConfidence(subject, topic, cardId, level, totalCards) {
