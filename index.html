@@ -1559,14 +1559,14 @@
             "English": "normal",
             "Drama": "normal",
             "French": "strong",
-            "Music": "strong",
+            "Music": "normal",
             "Art and Design": "strong"
         };
 
         // Per-topic weakness overrides: topics flagged here get a priority boost
         // regardless of their confidence rating
         const TOPIC_WEAKNESSES = {
-            "Maths": ["Algebraic-Fractions"]
+            "Environmental Science": ["Atmosphere", "Biosphere"]
         };
 
         // Daily drill subjects: these get a dedicated section in Today view
@@ -2511,7 +2511,7 @@
             }
 
             if (!priorities) {
-                const fresh = getPriorities(6);
+                const fresh = getPriorities(8);
                 priorities = fresh;
                 // Store only subject and topic identifiers
                 localStorage.setItem(storageKey, JSON.stringify(fresh.map(p => ({ subject: p.subject, topic: p.topic }))));
@@ -2565,7 +2565,7 @@
             }
         }
 
-        function getPriorities(count = 6) {
+        function getPriorities(count = 8) {
             const allTopics = [];
             const { date: nextExamDate } = getNextExam();
             const now = new Date();
@@ -2613,9 +2613,9 @@
             const nearestSubject = Object.entries(subjectExamDates)
                 .sort((a, b) => a[1] - b[1])[0]?.[0];
 
-            // Nearest exam subject gets more slots when exam is close
+            // Nearest exam subject: 3 slots in final week, 2 when >7 days out
             const nearestDays = subjectExamDates[nearestSubject] || 99;
-            const nearestSlots = nearestDays <= 14 ? 3 : 2;
+            const nearestSlots = nearestDays <= 7 ? 3 : 2;
             const otherMax = 2;
 
             const result = [];
@@ -2640,18 +2640,21 @@
                 subjectCounts[t.subject] = sc + 1;
             }
 
-            // Coverage guarantee: force unstudied topics for exams within 14 days
+            // Coverage guarantee: force unstudied topics for exams within 21 days
+            // Replaces lowest-scoring slots to ensure first exposure happens early
             const urgentUnstudied = allTopics.filter(t =>
-                t.daysUntilExam <= 14 &&
+                t.daysUntilExam <= 21 &&
                 storage.getTopicConfidence(t.subject, t.topic) === 'unrated' &&
                 !result.find(r => r.subject === t.subject && r.topic === t.topic)
             );
 
             if (urgentUnstudied.length > 0) {
-                // Replace the lowest-scoring item in result with the highest-scoring urgent unstudied
                 urgentUnstudied.sort((a, b) => b.score - a.score);
-                const toInsert = urgentUnstudied[0];
-                result[result.length - 1] = toInsert;
+                // Insert up to 2 urgent unstudied topics, replacing from the bottom
+                const insertCount = Math.min(urgentUnstudied.length, 2);
+                for (let i = 0; i < insertCount; i++) {
+                    result[result.length - 1 - i] = urgentUnstudied[i];
+                }
             }
 
             return result;
