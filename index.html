@@ -2226,6 +2226,13 @@
             "NingNing": ["photos/ningning-1.jpg", "photos/ningning-2.jpg", "photos/ningning-3.jpg", "photos/ningning-4.png"]
         };
 
+        const MEMBER_PORTRAIT = {
+            "Karina": "photos/karina-portrait.jpeg",
+            "Giselle": "photos/giselle-portrait.jpeg",
+            "Winter": "photos/winter-portrait.jpeg",
+            "NingNing": "photos/ningning-portrait.jpeg"
+        };
+
         const CLOSERS = [
             "Keep going. The exam does not stand a chance.",
             "10 more cards and you level up in KWANGYA.",
@@ -2465,10 +2472,7 @@
 
             const m = data.member;
             const s = data.subject;
-            const memberPhotos = MEMBER_PHOTOS[m] || [];
-            const photoSrc = memberPhotos.length > 0
-                ? memberPhotos[Math.abs(m.charCodeAt(0) + s.charCodeAt(0)) % memberPhotos.length]
-                : 'photos/aespa-' + (Math.abs(m.charCodeAt(0) + s.charCodeAt(0)) % 6 + 1) + '.jpg';
+            const photoSrc = MEMBER_PORTRAIT[m] || 'photos/aespa-' + (Math.abs(m.charCodeAt(0) + s.charCodeAt(0)) % 6 + 1) + '.jpg';
             let cardsHtml = cards.map((c, i) =>
                 '<div class="collection-detail-text" style="' + (i > 0 ? 'margin-top: 10px; padding-top: 10px; border-top: 1px solid #4a3a6a;' : '') + '">' + c.hook + ' ' + c.closer + '</div>'
             ).join('');
