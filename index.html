@@ -1558,7 +1558,7 @@
             "Environmental Science": "normal",
             "English": "normal",
             "Drama": "normal",
-            "French": "strong",
+            "French": "normal",
             "Music": "normal",
             "Art and Design": "strong"
         };
@@ -1849,6 +1849,38 @@
             const now = new Date();
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('currentDate').textContent = now.toLocaleDateString('en-GB', options);
+        }
+
+        function isLightStudyDay() {
+            const now = new Date();
+            const day = now.getDay(); // 0=Sun, 6=Sat
+            if (day === 0 || day === 6) return { reason: 'weekend' };
+
+            const todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+            const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+            const tomorrowStr = tomorrow.getFullYear() + '-' + String(tomorrow.getMonth() + 1).padStart(2, '0') + '-' + String(tomorrow.getDate()).padStart(2, '0');
+
+            let isExamToday = false;
+            let tomorrowExamSubject = null;
+
+            for (const [examName, date] of Object.entries(EXAM_DATES)) {
+                const dateStr = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+                if (todayStr === dateStr) isExamToday = true;
+                if (tomorrowStr === dateStr) {
+                    // Map exam name back to FLASHCARD_DATA subject
+                    if (examName.startsWith('Maths')) tomorrowExamSubject = 'Maths';
+                    else if (examName.startsWith('English')) tomorrowExamSubject = 'English';
+                    else tomorrowExamSubject = examName;
+                }
+            }
+
+            if (isExamToday && tomorrowExamSubject) {
+                return { reason: 'exam-eve', examSubject: tomorrowExamSubject };
+            }
+            if (isExamToday) {
+                return { reason: 'exam-day' };
+            }
+            return { reason: 'normal' };
         }
 
         function getNextExam() {
@@ -2511,7 +2543,9 @@
             }
 
             if (!priorities) {
-                const fresh = getPriorities(8);
+                const dayInfo = isLightStudyDay();
+                const isLight = dayInfo.reason !== 'normal';
+                const fresh = getPriorities(isLight ? 4 : 8, dayInfo);
                 priorities = fresh;
                 // Store only subject and topic identifiers
                 localStorage.setItem(storageKey, JSON.stringify(fresh.map(p => ({ subject: p.subject, topic: p.topic }))));
@@ -2565,7 +2599,7 @@
             }
         }
 
-        function getPriorities(count = 8) {
+        function getPriorities(count = 8, dayInfo = { reason: 'normal' }) {
             const allTopics = [];
             const { date: nextExamDate } = getNextExam();
             const now = new Date();
@@ -2610,18 +2644,32 @@
                     subjectExamDates[t.subject] = t.daysUntilExam;
                 }
             }
-            const nearestSubject = Object.entries(subjectExamDates)
+            let nearestSubject = Object.entries(subjectExamDates)
                 .sort((a, b) => a[1] - b[1])[0]?.[0];
 
-            // Nearest exam subject: 3 slots in final week, 2 when >7 days out
+            // Slot reservation by day type:
+            // - normal: nearest exam gets 3 reserved slots (<=7 days) or 2 (>7 days)
+            // - exam-eve: same reservation, but for tomorrow's exam subject
+            // - weekend / exam-day: no reservation, all slots filled by score
             const nearestDays = subjectExamDates[nearestSubject] || 99;
-            const nearestSlots = nearestDays <= 7 ? 3 : 2;
+            let nearestSlots;
+            if (dayInfo.reason === 'normal') {
+                nearestSlots = nearestDays <= 7 ? 3 : 2;
+            } else if (dayInfo.reason === 'exam-eve') {
+                // Reserve slots for the subject with an exam tomorrow
+                const eveDays = subjectExamDates[dayInfo.examSubject];
+                nearestSlots = (eveDays !== undefined && eveDays <= 7) ? 3 : 2;
+                nearestSubject = dayInfo.examSubject;
+            } else {
+                // weekend or exam-day: no reservation
+                nearestSlots = 0;
+            }
             const otherMax = 2;
 
             const result = [];
             const subjectCounts = {};
 
-            // First: top N from nearest exam subject
+            // First: top N from nearest exam subject (skipped on light days)
             for (const t of allTopics) {
                 if (result.length >= nearestSlots) break;
                 if (t.subject === nearestSubject) {
@@ -2648,10 +2696,10 @@
                 !result.find(r => r.subject === t.subject && r.topic === t.topic)
             );
 
-            if (urgentUnstudied.length > 0) {
+            if (urgentUnstudied.length > 0 && result.length >= 2) {
                 urgentUnstudied.sort((a, b) => b.score - a.score);
                 // Insert up to 2 urgent unstudied topics, replacing from the bottom
-                const insertCount = Math.min(urgentUnstudied.length, 2);
+                const insertCount = Math.min(urgentUnstudied.length, 2, result.length);
                 for (let i = 0; i < insertCount; i++) {
                     result[result.length - 1 - i] = urgentUnstudied[i];
                 }
