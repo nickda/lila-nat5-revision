@@ -1322,6 +1322,7 @@
             <div class="greeting">Welcome back,</div>
             <h1>Lila's National 5 Revision</h1>
             <div class="date-display" id="currentDate"></div>
+            <div id="reset-msg" style="display:none;font-size:12px;color:#a0ddb0;margin-top:8px;">Priorities refreshed</div>
         </header>
 
         <div id="today-view" class="view active">
@@ -1850,6 +1851,29 @@
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('currentDate').textContent = now.toLocaleDateString('en-GB', options);
         }
+
+        // Long-press date to force-regenerate today's priorities (for iOS Safari)
+        (function() {
+            let pressTimer = null;
+            const el = document.getElementById('currentDate');
+            const start = () => { pressTimer = setTimeout(() => {
+                const todayKey = getLocalDateKey();
+                localStorage.removeItem('lila_daily_priorities_' + todayKey);
+                localStorage.removeItem('lila_daily_drills_' + todayKey);
+                const msg = document.getElementById('reset-msg');
+                msg.style.display = 'block';
+                setTimeout(() => { msg.style.display = 'none'; }, 2000);
+                renderPriorities();
+                renderDailyDrill();
+            }, 1500); };
+            const cancel = () => { clearTimeout(pressTimer); };
+            el.addEventListener('touchstart', start);
+            el.addEventListener('touchend', cancel);
+            el.addEventListener('touchcancel', cancel);
+            el.addEventListener('mousedown', start);
+            el.addEventListener('mouseup', cancel);
+            el.addEventListener('mouseleave', cancel);
+        })();
 
         function isLightStudyDay() {
             const now = new Date();
