@@ -2215,6 +2215,13 @@
 
         const AESPA_MEMBERS = ["Karina", "Giselle", "Winter", "NingNing"];
 
+        const MEMBER_PHOTOS = {
+            "Karina": ["photos/karina-1.jpg", "photos/karina-2.png", "photos/karina-3.png", "photos/karina-4.jpg"],
+            "Giselle": ["photos/giselle-1.png", "photos/giselle-2.jpg", "photos/giselle-3.jpg", "photos/giselle-4.jpg"],
+            "Winter": ["photos/winter-1.png", "photos/winter-2.jpg", "photos/winter-3.jpg", "photos/winter-4.jpg"],
+            "NingNing": ["photos/ningning-1.jpg", "photos/ningning-2.jpg", "photos/ningning-3.jpg", "photos/ningning-4.png"]
+        };
+
         const CLOSERS = [
             "Keep going. The exam does not stand a chance.",
             "10 more cards and you level up in KWANGYA.",
@@ -2310,8 +2317,11 @@
 
             const hook = hooks[hookIndex];
             const closer = CLOSERS[Math.floor(Math.random() * CLOSERS.length)];
-            const photoIndex = (Math.floor(Math.random() * 6)) + 1;
-            return { member, hook, closer, photoIndex, hookIndex };
+            const memberPhotos = MEMBER_PHOTOS[member] || [];
+            const photoPath = memberPhotos.length > 0
+                ? memberPhotos[Math.floor(Math.random() * memberPhotos.length)]
+                : 'photos/aespa-' + (Math.floor(Math.random() * 6) + 1) + '.jpg';
+            return { member, hook, closer, photoPath, hookIndex };
         }
 
         function showReward(subject) {
@@ -2319,7 +2329,7 @@
 
             const photoEl = document.getElementById('reward-photo');
             const img = new Image();
-            img.src = 'photos/aespa-' + r.photoIndex + '.jpg';
+            img.src = r.photoPath;
             img.alt = r.member;
             img.onerror = function() {
                 photoEl.innerHTML = '<div class="reward-photo-fallback">' + r.member.charAt(0) + '</div>';
@@ -2451,13 +2461,16 @@
 
             const m = data.member;
             const s = data.subject;
-            const photoIdx = Math.abs(m.charCodeAt(0) + s.charCodeAt(0)) % 6 + 1;
+            const memberPhotos = MEMBER_PHOTOS[m] || [];
+            const photoSrc = memberPhotos.length > 0
+                ? memberPhotos[Math.abs(m.charCodeAt(0) + s.charCodeAt(0)) % memberPhotos.length]
+                : 'photos/aespa-' + (Math.abs(m.charCodeAt(0) + s.charCodeAt(0)) % 6 + 1) + '.jpg';
             let cardsHtml = cards.map((c, i) =>
                 '<div class="collection-detail-text" style="' + (i > 0 ? 'margin-top: 10px; padding-top: 10px; border-top: 1px solid #4a3a6a;' : '') + '">' + c.hook + ' ' + c.closer + '</div>'
             ).join('');
 
             detail.innerHTML =
-                '<div class="collection-detail-photo"><img src="photos/aespa-' + photoIdx + '.jpg" alt="' + m + '" onerror="this.parentElement.innerHTML=\'<div class=reward-photo-fallback>' + m.charAt(0) + '</div>\'"></div>' +
+                '<div class="collection-detail-photo"><img src="' + photoSrc + '" alt="' + m + '" onerror="this.parentElement.innerHTML=\'<div class=reward-photo-fallback>' + m.charAt(0) + '</div>\'"></div>' +
                 '<div class="collection-detail-member">' + m + '</div>' +
                 '<div class="collection-detail-subject">' + s + ' (' + cards.length + '/3)</div>' +
                 cardsHtml;
