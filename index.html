@@ -2674,7 +2674,7 @@
                     if (difficulty === 'strong') score *= 0.7;
 
                     const weakTopics = TOPIC_WEAKNESSES[subject] || [];
-                    if (weakTopics.includes(topic)) score *= 1.5;
+                    if (weakTopics.includes(topic) && (confidence === 'unrated' || confidence === 'not-yet')) score *= 1.5;
 
                     allTopics.push({ subject, topic, frequency: pastPaperFreq, score, daysUntilExam });
                 }
