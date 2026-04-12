@@ -1459,6 +1459,11 @@
             </div>
 
             <div class="modal-section">
+                <label class="modal-label">Refresh Today's Priorities</label>
+                <button class="modal-button" onclick="refreshPriorities()">Regenerate Study List</button>
+            </div>
+
+            <div class="modal-section">
                 <label class="modal-label">Reset All Progress</label>
                 <button class="modal-button secondary" onclick="resetData()">Clear All Data</button>
             </div>
@@ -3079,6 +3084,19 @@
 
         function closeModal() {
             document.getElementById('settings-modal').classList.remove('show');
+        }
+
+        function refreshPriorities() {
+            const todayKey = getLocalDateKey();
+            localStorage.removeItem('lila_daily_priorities_' + todayKey);
+            localStorage.removeItem('lila_daily_drills_' + todayKey);
+            closeModal();
+            document.querySelector('[data-tab="today-view"]').click();
+            const msg = document.getElementById('reset-msg');
+            msg.style.display = 'block';
+            setTimeout(() => { msg.style.display = 'none'; }, 2000);
+            renderPriorities();
+            renderDailyDrill();
         }
 
         function exportData() {
