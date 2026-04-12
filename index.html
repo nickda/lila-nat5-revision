@@ -9,6 +9,7 @@
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.0.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.0.0/firebase-auth-compat.js"></script>
     <style>
         * {
             margin: 0;
@@ -1633,6 +1634,10 @@
             const isHash = /^[0-9a-f]{64}$/.test(passphrase);
             const pathKey = isHash ? passphrase : await derivePathKey(passphrase);
             localStorage.setItem('lila_dash_pin', pathKey);
+            if (firebaseReady) {
+                try { await firebase.auth().signInAnonymously(); }
+                catch (e) { console.warn('Anonymous auth failed, continuing local-only', e); }
+            }
             dbRef = firebaseReady ? firebase.database().ref('dashboards/' + pathKey) : null;
             storage = new Storage();
             if (typeof refreshCurrentView === 'function') refreshCurrentView();
@@ -1902,7 +1907,7 @@
                 }
             }
 
-            if (isExamToday && tomorrowExamSubject) {
+            if (tomorrowExamSubject) {
                 return { reason: 'exam-eve', examSubject: tomorrowExamSubject };
             }
             if (isExamToday) {
@@ -2439,6 +2444,10 @@
 
         let activeCollectionCell = null;
 
+        function escHtml(str) {
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        }
+
         function showCollectionDetail(member, subject) {
             const cellKey = member + '_' + subject;
             let detail = document.getElementById('collection-detail');
@@ -2474,13 +2483,15 @@
             const s = data.subject;
             const photoSrc = MEMBER_PORTRAIT[m] || 'photos/aespa-' + (Math.abs(m.charCodeAt(0) + s.charCodeAt(0)) % 6 + 1) + '.jpg';
             let cardsHtml = cards.map((c, i) =>
-                '<div class="collection-detail-text" style="' + (i > 0 ? 'margin-top: 10px; padding-top: 10px; border-top: 1px solid #4a3a6a;' : '') + '">' + c.hook + ' ' + c.closer + '</div>'
+                '<div class="collection-detail-text" style="' + (i > 0 ? 'margin-top: 10px; padding-top: 10px; border-top: 1px solid #4a3a6a;' : '') + '">' + escHtml(c.hook) + ' ' + escHtml(c.closer) + '</div>'
             ).join('');
 
+            const mSafe = escHtml(m);
+            const sSafe = escHtml(s);
             detail.innerHTML =
-                '<div class="collection-detail-photo"><img src="' + photoSrc + '" alt="' + m + '" onerror="this.parentElement.innerHTML=\'<div class=reward-photo-fallback>' + m.charAt(0) + '</div>\'"></div>' +
-                '<div class="collection-detail-member">' + m + '</div>' +
-                '<div class="collection-detail-subject">' + s + ' (' + cards.length + '/3)</div>' +
+                '<div class="collection-detail-photo"><img src="' + escHtml(photoSrc) + '" alt="' + mSafe + '" onerror="this.parentElement.innerHTML=\'<div class=reward-photo-fallback>' + mSafe.charAt(0) + '</div>\'"></div>' +
+                '<div class="collection-detail-member">' + mSafe + '</div>' +
+                '<div class="collection-detail-subject">' + sSafe + ' (' + cards.length + '/3)</div>' +
                 cardsHtml;
             detail.classList.add('show');
             activeCollectionCell = cellKey;
@@ -2745,9 +2756,11 @@
             if (urgentUnstudied.length > 0 && result.length >= 2) {
                 urgentUnstudied.sort((a, b) => b.score - a.score);
                 // Insert up to 2 urgent unstudied topics, replacing from the bottom
-                const insertCount = Math.min(urgentUnstudied.length, 2, result.length);
+                const insertCount = Math.min(urgentUnstudied.length, 2, result.length - nearestSlots);
                 for (let i = 0; i < insertCount; i++) {
-                    result[result.length - 1 - i] = urgentUnstudied[i];
+                    const idx = result.length - 1 - i;
+                    if (idx < nearestSlots) break;
+                    result[idx] = urgentUnstudied[i];
                 }
             }
 
