@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Sustainability | NAT5 Environmental Science</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a1628;
+            color: #e0e8f5;
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        .infographic {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 24px 80px;
+        }
+
+        /* ---- HERO ---- */
+        .hero {
+            text-align: center;
+            padding: 60px 20px 50px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(56,182,255,0.15) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            display: inline-block;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .hero h1 {
+            font-size: 42px;
+            font-weight: 900;
+            letter-spacing: -1.5px;
+            background: linear-gradient(135deg, #38b6ff, #7dd3fc, #38b6ff);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmer 4s ease-in-out infinite;
+            margin-bottom: 8px;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .hero .subtitle {
+            font-size: 15px;
+            color: #7da0c9;
+            font-weight: 500;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* ---- SECTION HEADERS ---- */
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin: 48px 0 24px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid rgba(56,182,255,0.2);
+        }
+
+        .section-header .icon {
+            font-size: 28px;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            flex-shrink: 0;
+        }
+
+        .section-header h2 {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        /* ---- DEFINITION BOX ---- */
+        .definition-box {
+            background: linear-gradient(135deg, #1a2744 0%, #162035 100%);
+            border: 1px solid rgba(56,182,255,0.25);
+            border-left: 4px solid #38b6ff;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 32px;
+        }
+
+        .definition-box .term {
+            font-weight: 700;
+            color: #7dd3fc;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 6px;
+        }
+
+        .definition-box p {
+            font-size: 15px;
+            color: #b8cde5;
+            line-height: 1.6;
+        }
+
+        /* ---- STAT BANNER ---- */
+        .stat-banner {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 36px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #1a2a45 0%, #14203a 100%);
+            border: 1px solid rgba(56,182,255,0.15);
+            border-radius: 14px;
+            padding: 24px 16px;
+            text-align: center;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(56,182,255,0.4);
+        }
+
+        .stat-card .number {
+            font-size: 36px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #38b6ff, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.1;
+        }
+
+        .stat-card .unit {
+            font-size: 14px;
+            color: #7da0c9;
+            margin-top: 4px;
+        }
+
+        .stat-card .label {
+            font-size: 12px;
+            color: #5a7a9e;
+            margin-top: 8px;
+            line-height: 1.3;
+        }
+
+        /* ---- IMPACT COLUMNS ---- */
+        .impact-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 36px;
+        }
+
+        .impact-card {
+            border-radius: 14px;
+            padding: 24px 18px;
+            border: 1px solid;
+        }
+
+        .impact-card.env {
+            background: linear-gradient(180deg, rgba(34,197,94,0.12) 0%, rgba(34,197,94,0.03) 100%);
+            border-color: rgba(34,197,94,0.25);
+        }
+        .impact-card.social {
+            background: linear-gradient(180deg, rgba(251,191,36,0.12) 0%, rgba(251,191,36,0.03) 100%);
+            border-color: rgba(251,191,36,0.25);
+        }
+        .impact-card.econ {
+            background: linear-gradient(180deg, rgba(239,68,68,0.12) 0%, rgba(239,68,68,0.03) 100%);
+            border-color: rgba(239,68,68,0.25);
+        }
+
+        .impact-card h3 {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .impact-card.env h3 { color: #4ade80; }
+        .impact-card.social h3 { color: #fbbf24; }
+        .impact-card.econ h3 { color: #f87171; }
+
+        .impact-card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .impact-card li {
+            font-size: 13px;
+            color: #b8cde5;
+            padding: 6px 0;
+            padding-left: 18px;
+            position: relative;
+            line-height: 1.4;
+        }
+
+        .impact-card.env li::before { content: ''; position: absolute; left: 0; top: 12px; width: 6px; height: 6px; border-radius: 50%; background: #4ade80; }
+        .impact-card.social li::before { content: ''; position: absolute; left: 0; top: 12px; width: 6px; height: 6px; border-radius: 50%; background: #fbbf24; }
+        .impact-card.econ li::before { content: ''; position: absolute; left: 0; top: 12px; width: 6px; height: 6px; border-radius: 50%; background: #f87171; }
+
+        /* ---- COMPARISON TABLE ---- */
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 36px;
+        }
+
+        .compare-card {
+            border-radius: 14px;
+            padding: 24px;
+            border: 1px solid;
+        }
+
+        .compare-card.developed {
+            background: linear-gradient(180deg, rgba(56,182,255,0.1) 0%, rgba(56,182,255,0.02) 100%);
+            border-color: rgba(56,182,255,0.25);
+        }
+
+        .compare-card.developing {
+            background: linear-gradient(180deg, rgba(251,146,60,0.1) 0%, rgba(251,146,60,0.02) 100%);
+            border-color: rgba(251,146,60,0.25);
+        }
+
+        .compare-card h3 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .compare-card.developed h3 { color: #7dd3fc; }
+        .compare-card.developing h3 { color: #fb923c; }
+
+        .compare-card li {
+            font-size: 13px;
+            color: #b8cde5;
+            padding: 5px 0;
+            padding-left: 16px;
+            position: relative;
+            line-height: 1.4;
+        }
+
+        .compare-card.developed li::before { content: ''; position: absolute; left: 0; top: 11px; width: 6px; height: 6px; border-radius: 50%; background: #38b6ff; }
+        .compare-card.developing li::before { content: ''; position: absolute; left: 0; top: 11px; width: 6px; height: 6px; border-radius: 50%; background: #fb923c; }
+
+        .compare-card ul { list-style: none; padding: 0; }
+
+        /* ---- ISSUES SECTORS ---- */
+        .sector-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .sector-tab {
+            padding: 8px 18px;
+            border-radius: 8px;
+            border: 1px solid rgba(56,182,255,0.2);
+            background: rgba(56,182,255,0.06);
+            color: #7da0c9;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sector-tab:hover, .sector-tab.active {
+            background: rgba(56,182,255,0.18);
+            border-color: #38b6ff;
+            color: #ffffff;
+        }
+
+        .sector-panel {
+            display: none;
+            background: linear-gradient(135deg, #1a2744 0%, #14203a 100%);
+            border: 1px solid rgba(56,182,255,0.15);
+            border-radius: 14px;
+            padding: 28px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .sector-panel.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        .sector-panel h4 {
+            font-size: 14px;
+            font-weight: 700;
+            color: #7dd3fc;
+            margin-bottom: 10px;
+            margin-top: 18px;
+        }
+
+        .sector-panel h4:first-child { margin-top: 0; }
+
+        .sector-panel li {
+            font-size: 13px;
+            color: #b8cde5;
+            padding: 4px 0;
+            padding-left: 16px;
+            position: relative;
+            line-height: 1.4;
+        }
+
+        .sector-panel li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 10px;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #38b6ff;
+        }
+
+        .sector-panel ul { list-style: none; padding: 0; }
+
+        /* ---- TREATMENT PIPELINE ---- */
+        .pipeline {
+            display: flex;
+            gap: 0;
+            margin-bottom: 36px;
+            position: relative;
+        }
+
+        .pipeline::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 24px;
+            right: 24px;
+            height: 2px;
+            background: rgba(56,182,255,0.15);
+            z-index: 0;
+        }
+
+        .pipe-stage {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            padding: 0 8px;
+        }
+
+        .pipe-circle {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            margin: 0 auto 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            border: 3px solid;
+        }
+
+        .pipe-stage:nth-child(1) .pipe-circle {
+            background: rgba(56,182,255,0.15);
+            border-color: rgba(56,182,255,0.4);
+        }
+        .pipe-stage:nth-child(2) .pipe-circle {
+            background: rgba(139,92,246,0.15);
+            border-color: rgba(139,92,246,0.4);
+        }
+        .pipe-stage:nth-child(3) .pipe-circle {
+            background: rgba(34,197,94,0.15);
+            border-color: rgba(34,197,94,0.4);
+        }
+
+        .pipe-stage h4 {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .pipe-stage:nth-child(1) h4 { color: #7dd3fc; }
+        .pipe-stage:nth-child(2) h4 { color: #c4b5fd; }
+        .pipe-stage:nth-child(3) h4 { color: #86efac; }
+
+        .pipe-stage p {
+            font-size: 12px;
+            color: #7da0c9;
+            line-height: 1.4;
+        }
+
+        .pipe-arrow {
+            position: absolute;
+            right: -12px;
+            top: 28px;
+            color: rgba(56,182,255,0.3);
+            font-size: 20px;
+            z-index: 2;
+        }
+
+        /* ---- CONSERVATION CARDS ---- */
+        .conservation-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 36px;
+        }
+
+        .conservation-card {
+            border-radius: 14px;
+            padding: 24px 18px;
+            border: 1px solid rgba(56,182,255,0.15);
+            background: linear-gradient(180deg, rgba(56,182,255,0.06) 0%, transparent 100%);
+        }
+
+        .conservation-card h3 {
+            font-size: 14px;
+            font-weight: 700;
+            color: #7dd3fc;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .conservation-card li {
+            font-size: 12.5px;
+            color: #b8cde5;
+            padding: 4px 0;
+            padding-left: 14px;
+            position: relative;
+            line-height: 1.4;
+        }
+
+        .conservation-card li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 10px;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: #4ade80;
+        }
+
+        .conservation-card ul { list-style: none; padding: 0; }
+
+        /* ---- SEPA SECTION ---- */
+        .sepa-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+            margin-bottom: 36px;
+        }
+
+        .sepa-card {
+            background: linear-gradient(135deg, #1a2744 0%, #14203a 100%);
+            border: 1px solid rgba(56,182,255,0.12);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .sepa-card h4 {
+            font-size: 13px;
+            font-weight: 700;
+            color: #7dd3fc;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sepa-card p {
+            font-size: 12.5px;
+            color: #8a9ec4;
+            line-height: 1.5;
+        }
+
+        /* ---- EXAM TIP ---- */
+        .exam-tip {
+            background: linear-gradient(135deg, rgba(251,191,36,0.1) 0%, rgba(251,191,36,0.03) 100%);
+            border: 1px solid rgba(251,191,36,0.3);
+            border-radius: 14px;
+            padding: 24px 28px;
+            margin-top: 40px;
+        }
+
+        .exam-tip h3 {
+            font-size: 14px;
+            font-weight: 700;
+            color: #fbbf24;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .exam-tip li {
+            font-size: 13px;
+            color: #d4c89a;
+            padding: 4px 0;
+            padding-left: 16px;
+            position: relative;
+            line-height: 1.5;
+        }
+
+        .exam-tip li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 11px;
+            width: 6px;
+            height: 6px;
+            border-radius: 2px;
+            background: #fbbf24;
+        }
+
+        .exam-tip ul { list-style: none; padding: 0; }
+
+        /* ---- FOOTER ---- */
+        .footer {
+            text-align: center;
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(56,182,255,0.1);
+            font-size: 12px;
+            color: #4a6080;
+        }
+
+        /* ---- RESPONSIVE ---- */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 30px; }
+            .stat-banner, .impact-grid, .conservation-grid { grid-template-columns: 1fr; }
+            .comparison { grid-template-columns: 1fr; }
+            .pipeline { flex-direction: column; gap: 16px; }
+            .pipeline::after { display: none; }
+            .pipe-arrow { display: none; }
+            .sepa-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 480px) {
+            .infographic { padding: 20px 14px 60px; }
+            .hero { padding: 40px 10px 30px; }
+        }
+
+        /* ---- PRINT ---- */
+        @media print {
+            body { background: #fff; color: #1a1a1a; }
+            .hero h1 { -webkit-text-fill-color: #0369a1; }
+            .impact-card, .compare-card, .conservation-card, .sepa-card, .sector-panel, .definition-box, .stat-card, .exam-tip {
+                background: #f8fafc; border-color: #cbd5e1; color: #1a1a1a;
+            }
+            .impact-card li, .compare-card li, .conservation-card li, .sector-panel li, .sepa-card p, .definition-box p, .stat-card .label, .exam-tip li {
+                color: #334155;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="infographic">
+
+    <!-- HERO -->
+    <div class="hero">
+        <div class="hero-icon">💧</div>
+        <h1>Water Sustainability</h1>
+        <div class="subtitle">NAT5 Environmental Science</div>
+    </div>
+
+    <!-- DEFINITION -->
+    <div class="definition-box">
+        <div class="term">Key Definition: Wastewater</div>
+        <p>Water that has been used in homes, industries, or agriculture and contains dissolved or suspended substances (pollutants, organic matter, chemicals, pathogens). It requires treatment before safe discharge or reuse to prevent environmental and health impacts.</p>
+    </div>
+
+    <!-- KEY STATS -->
+    <div class="stat-banner">
+        <div class="stat-card">
+            <div class="number">70%</div>
+            <div class="unit">of global freshwater</div>
+            <div class="label">Used by agriculture for irrigation</div>
+        </div>
+        <div class="stat-card">
+            <div class="number">&lt;50%</div>
+            <div class="unit">access in developing nations</div>
+            <div class="label">Population with clean drinking water</div>
+        </div>
+        <div class="stat-card">
+            <div class="number">100-300</div>
+            <div class="unit">litres per day</div>
+            <div class="label">Per capita consumption, developed countries</div>
+        </div>
+    </div>
+
+    <!-- IMPACTS OF GROWING POPULATION -->
+    <div class="section-header">
+        <div class="icon" style="background: rgba(239,68,68,0.12);">📈</div>
+        <h2>Impacts of Growing Population on Water</h2>
+    </div>
+
+    <div class="impact-grid">
+        <div class="impact-card env">
+            <h3>🌿 Environmental</h3>
+            <ul>
+                <li>Freshwater depletion from rivers, lakes, aquifers</li>
+                <li>Groundwater depleted faster than recharge</li>
+                <li>Saltwater intrusion into coastal aquifers</li>
+                <li>Loss of wetlands and riparian habitats</li>
+                <li>Eutrophication from nutrient runoff</li>
+                <li>Desertification of productive land</li>
+            </ul>
+        </div>
+        <div class="impact-card social">
+            <h3>👥 Social</h3>
+            <ul>
+                <li>Water scarcity affecting drinking access</li>
+                <li>Conflict over shared resources between nations</li>
+                <li>Disease outbreaks from unsafe water</li>
+                <li>Malnutrition linked to failed irrigation</li>
+                <li>Displacement of communities</li>
+                <li>Gender burden: women and girls collecting water</li>
+            </ul>
+        </div>
+        <div class="impact-card econ">
+            <h3>💰 Economic</h3>
+            <ul>
+                <li>High water treatment and infrastructure costs</li>
+                <li>Reduced agricultural productivity</li>
+                <li>Industrial losses requiring water cooling</li>
+                <li>Healthcare costs from water diseases</li>
+                <li>Loss of tourism from degraded water bodies</li>
+                <li>Drought-related economic losses</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- DEVELOPED vs DEVELOPING -->
+    <div class="section-header">
+        <div class="icon" style="background: rgba(56,182,255,0.12);">🌍</div>
+        <h2>Developed vs Developing Countries</h2>
+    </div>
+
+    <div class="comparison">
+        <div class="compare-card developed">
+            <h3>🏙️ Developed Countries</h3>
+            <ul>
+                <li>Extensive treatment and distribution infrastructure</li>
+                <li>&gt;95% access to clean drinking water</li>
+                <li>Wastewater treated before discharge</li>
+                <li>Regulatory frameworks ensure quality</li>
+                <li>Advanced desalination and recycling tech</li>
+                <li>High per capita consumption</li>
+            </ul>
+        </div>
+        <div class="compare-card developing">
+            <h3>🌾 Developing Countries</h3>
+            <ul>
+                <li>Limited treatment infrastructure</li>
+                <li>Often &lt;50% access to clean water</li>
+                <li>Inadequate wastewater treatment spreads disease</li>
+                <li>Limited regulation and monitoring</li>
+                <li>Vulnerable to drought and flooding</li>
+                <li>High burden: cholera, typhoid, dysentery</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- WATER USE ISSUES BY SECTOR -->
+    <div class="section-header">
+        <div class="icon" style="background: rgba(139,92,246,0.12);">⚠️</div>
+        <h2>Issues from Water Use by Sector</h2>
+    </div>
+
+    <div class="sector-tabs">
+        <div class="sector-tab active" onclick="showSector('industrial')">🏭 Industrial</div>
+        <div class="sector-tab" onclick="showSector('agricultural')">🌾 Agricultural</div>
+        <div class="sector-tab" onclick="showSector('domestic')">🏠 Domestic</div>
+        <div class="sector-tab" onclick="showSector('wastewater')">🔬 Wastewater</div>
+    </div>
+
+    <div class="sector-panel active" id="sector-industrial">
+        <h4>Pollution and Effluents</h4>
+        <ul>
+            <li>Heavy metals (lead, mercury, cadmium) from manufacturing</li>
+            <li>Organic pollutants and toxic chemicals (PCBs, dioxins)</li>
+            <li>Thermal pollution: heated discharge reduces dissolved oxygen</li>
+            <li>Eutrophication from nutrient-rich wastewater</li>
+            <li>Bioaccumulation of persistent pollutants in food chains</li>
+        </ul>
+        <h4>Impacts</h4>
+        <ul>
+            <li>Aquatic organism death from oxygen depletion or toxins</li>
+            <li>Ecosystem disruption and biodiversity loss</li>
+            <li>Contamination of drinking water sources</li>
+            <li>Restrictions on fishing and recreation</li>
+        </ul>
+    </div>
+
+    <div class="sector-panel" id="sector-agricultural">
+        <h4>Pollution</h4>
+        <ul>
+            <li>Nutrient runoff (N and P) causes eutrophication</li>
+            <li>Pesticide residues contaminate water and accumulate in organisms</li>
+            <li>Soil erosion increases turbidity, blocking light</li>
+            <li>Salinization from irrigation in arid regions</li>
+        </ul>
+        <h4>Abstraction and Irrigation</h4>
+        <ul>
+            <li>Over-extraction lowers water tables (e.g. Ogallala Aquifer)</li>
+            <li>Reduced river flow affects downstream ecosystems (e.g. Aral Sea)</li>
+            <li>70% of global freshwater consumed by irrigation</li>
+            <li>Wetland drying and habitat loss</li>
+        </ul>
+    </div>
+
+    <div class="sector-panel" id="sector-domestic">
+        <h4>Shortages and Restrictions</h4>
+        <ul>
+            <li>High per capita use (100-300 L/day) strains supply</li>
+            <li>Peak demand periods can exceed capacity</li>
+            <li>Climate variability and drought reduce supply</li>
+            <li>Urbanization increases demand</li>
+        </ul>
+        <h4>Public Health Impacts</h4>
+        <ul>
+            <li>Insufficient water for sanitation and hygiene</li>
+            <li>Waterborne diseases: cholera, typhoid, dysentery</li>
+            <li>Higher disease burden in developing countries</li>
+        </ul>
+    </div>
+
+    <div class="sector-panel" id="sector-wastewater">
+        <h4>Chemical Impacts</h4>
+        <ul>
+            <li>Nutrients cause algal blooms and eutrophication</li>
+            <li>Decomposing algae deplete oxygen, creating dead zones</li>
+            <li>Heavy metals and POPs bioaccumulate in food chains</li>
+        </ul>
+        <h4>Biological Impacts</h4>
+        <ul>
+            <li>Pathogens (bacteria, viruses, parasites) from sewage</li>
+            <li>Fecal coliforms indicate contamination risk</li>
+            <li>Biodiversity loss as sensitive species cannot tolerate pollution</li>
+        </ul>
+        <h4>Physical Impacts</h4>
+        <ul>
+            <li>Suspended solids increase turbidity, blocking light</li>
+            <li>Thermal pollution reduces dissolved oxygen</li>
+            <li>Altered salinity and pH affects species distribution</li>
+        </ul>
+    </div>
+
+    <!-- WASTEWATER TREATMENT PIPELINE -->
+    <div class="section-header">
+        <div class="icon" style="background: rgba(34,197,94,0.12);">🔄</div>
+        <h2>Wastewater Treatment Pipeline</h2>
+    </div>
+
+    <div class="pipeline">
+        <div class="pipe-stage">
+            <div class="pipe-circle">🪣</div>
+            <h4>Primary</h4>
+            <p>Physical removal of solids, grit, and oils through sedimentation and screening. Reduces suspended solids.</p>
+            <span class="pipe-arrow">→</span>
+        </div>
+        <div class="pipe-stage">
+            <div class="pipe-circle">🦠</div>
+            <h4>Secondary</h4>
+            <p>Biological breakdown of organic matter using microorganisms (activated sludge / trickling filters). Reduces BOD.</p>
+            <span class="pipe-arrow">→</span>
+        </div>
+        <div class="pipe-stage">
+            <div class="pipe-circle">✨</div>
+            <h4>Tertiary</h4>
+            <p>Nutrient removal (N, P), chemical treatment, disinfection (chlorination, UV, ozonation). Water suitable for drinking.</p>
+        </div>
+    </div>
+
+    <!-- SUSTAINABLE APPROACHES -->
+    <div class="section-header">
+        <div class="icon" style="background: rgba(34,197,94,0.12);">♻️</div>
+        <h2>Sustainable Approaches to Water Use</h2>
+    </div>
+
+    <div class="conservation-grid">
+        <div class="conservation-card">
+            <h3>🏠 Domestic</h3>
+            <ul>
+                <li>Low-flow taps, showerheads, dual-flush toilets</li>
+                <li>Fix leaks: a dripping tap wastes 20+ L/day</li>
+                <li>Rainwater harvesting for gardens</li>
+                <li>Greywater recycling: showers reused for irrigation</li>
+                <li>Drought-resistant landscaping</li>
+                <li>Water metering to incentivise conservation</li>
+            </ul>
+        </div>
+        <div class="conservation-card">
+            <h3>🌾 Agricultural</h3>
+            <ul>
+                <li>Drip irrigation: water direct to roots</li>
+                <li>Mulching reduces soil evaporation</li>
+                <li>Drought-resistant crop varieties</li>
+                <li>Precision agriculture: soil moisture sensors</li>
+                <li>Terracing reduces runoff on slopes</li>
+                <li>Constructed wetlands filter runoff naturally</li>
+            </ul>
+        </div>
+        <div class="conservation-card">
+            <h3>🏭 Industrial</h3>
+            <ul>
+                <li>Water recycling in cooling systems</li>
+                <li>Closed-loop systems minimise intake</li>
+                <li>Process optimisation to cut consumption</li>
+                <li>Treat wastewater for reuse</li>
+                <li>Heat recovery reduces cooling demand</li>
+                <li>Pollution prevention over treatment</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- SEPA -->
+    <div class="section-header">
+        <div class="icon" style="background: rgba(56,182,255,0.12);">🏛️</div>
+        <h2>Role of SEPA</h2>
+    </div>
+
+    <p style="font-size: 13px; color: #7da0c9; margin-bottom: 16px;">Scottish Environment Protection Agency: monitoring, regulation, and enforcement of water quality across Scotland.</p>
+
+    <div class="sepa-grid">
+        <div class="sepa-card">
+            <h4>📊 Monitoring</h4>
+            <p>Tests freshwater, estuarine, and coastal waters for pollutants, nutrients, pathogens. Publishes data and identifies pollution hotspots.</p>
+        </div>
+        <div class="sepa-card">
+            <h4>📜 Regulation</h4>
+            <p>Enforces Environmental Protection Act, issues discharge and abstraction licences, sets water quality standards, prosecutes illegal pollution.</p>
+        </div>
+        <div class="sepa-card">
+            <h4>🏭 Industrial Control</h4>
+            <p>Licences industrial wastewater discharge, sets emission limits, requires treatment to acceptable standards, inspects facilities.</p>
+        </div>
+        <div class="sepa-card">
+            <h4>🚰 Abstraction Control</h4>
+            <p>Limits extraction to sustainable levels, protects ecosystems, manages competing demands, guards against aquifer depletion.</p>
+        </div>
+        <div class="sepa-card">
+            <h4>🚨 Pollution Response</h4>
+            <p>Responds to environmental emergencies, investigates spills and illegal dumping, takes enforcement action, coordinates clean-up.</p>
+        </div>
+        <div class="sepa-card">
+            <h4>📢 Public Engagement</h4>
+            <p>Provides water quality information, consults communities, supports awareness campaigns, trains businesses on pollution prevention.</p>
+        </div>
+    </div>
+
+    <!-- EXAM TIPS -->
+    <div class="exam-tip">
+        <h3>📝 Exam Tips</h3>
+        <ul>
+            <li><strong>Define wastewater</strong> clearly: mention homes, industry, agriculture, dissolved/suspended pollutants, and need for treatment.</li>
+            <li><strong>Impact questions:</strong> always structure as Environmental, Social, Economic. The three-column approach works well.</li>
+            <li><strong>Developed vs Developing:</strong> compare infrastructure, access percentages, disease burden, and regulation.</li>
+            <li><strong>Sector questions:</strong> specify the sector (industrial, agricultural, domestic), then name specific pollutants or processes.</li>
+            <li><strong>Treatment stages:</strong> know the three stages (primary, secondary, tertiary) and what each removes.</li>
+            <li><strong>SEPA:</strong> know it monitors, regulates, and enforces. Mention specific acts and licence types.</li>
+            <li><strong>Case studies:</strong> use named examples: Ogallala Aquifer, Aral Sea, drip irrigation vs sprinklers.</li>
+        </ul>
+    </div>
+
+    <div class="footer">
+        NAT5 Environmental Science | Water Sustainability Revision Infographic
+    </div>
+
+</div>
+
+<script>
+    function showSector(id) {
+        document.querySelectorAll('.sector-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.sector-tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('sector-' + id).classList.add('active');
+        event.target.classList.add('active');
+    }
+</script>
+
+</body>
+</html>
