@@ -1984,15 +1984,15 @@
             const day = now.getDay(); // 0=Sun, 6=Sat
             if (day === 0 || day === 6) return { reason: 'weekend' };
 
-            const todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+            const todayStr = formatDateKey(now);
             const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-            const tomorrowStr = tomorrow.getFullYear() + '-' + String(tomorrow.getMonth() + 1).padStart(2, '0') + '-' + String(tomorrow.getDate()).padStart(2, '0');
+            const tomorrowStr = formatDateKey(tomorrow);
 
             let isExamToday = false;
             let tomorrowExamSubject = null;
 
             for (const [examName, date] of Object.entries(EXAM_DATES)) {
-                const dateStr = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+                const dateStr = formatDateKey(date);
                 if (todayStr === dateStr) isExamToday = true;
                 if (tomorrowStr === dateStr) {
                     // Map exam name back to FLASHCARD_DATA subject
@@ -2379,10 +2379,11 @@
             return best || 'Environmental Science';
         }
 
-        function getLocalDateKey() {
-            const d = new Date();
+        function formatDateKey(d) {
+            if (!d) d = new Date();
             return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
         }
+        function getLocalDateKey() { return formatDateKey(); }
 
         function trySessionReward() {
             if (sessionCardsRated < 3) return;
@@ -2626,12 +2627,7 @@
                 day: 4,
                 member: 'NingNing',
                 label: "NingNing's plan: Run it back",
-                retest: true,
-                topics: [
-                    { topic: 'Water', tag: 'Revisit' },
-                    { topic: 'Waste-Management', tag: 'Revisit' },
-                    { topic: 'Experimental-Skills', tag: 'Revisit' }
-                ]
+                topics: 'derive-retest'
             },
             '2026-04-21': {
                 day: 5,
@@ -2649,7 +2645,9 @@
             }
         };
 
-        let countdownPlanActive = false;
+        function isCountdownActive() {
+            return !!COUNTDOWN_PLAN[getLocalDateKey()];
+        }
 
         function renderCountdownPlan() {
             const section = document.getElementById('countdown-plan-section');
@@ -2661,11 +2659,9 @@
 
             if (!plan) {
                 section.style.display = 'none';
-                countdownPlanActive = false;
                 return;
             }
 
-            countdownPlanActive = true;
             section.style.display = '';
 
             if (plan.examDay) {
@@ -2681,6 +2677,16 @@
             labelEl.textContent = plan.label;
 
             let topics = plan.topics;
+
+            if (topics === 'derive-retest') {
+                topics = [];
+                for (const [, dayPlan] of Object.entries(COUNTDOWN_PLAN)) {
+                    if (!dayPlan.topics || dayPlan.topics === 'derive-retest') continue;
+                    for (const t of dayPlan.topics) {
+                        if (t.tag === 'New material') topics.push({ topic: t.topic, tag: 'Revisit' });
+                    }
+                }
+            }
 
             if (plan.sweep) {
                 const weakTopics = [];
@@ -2702,12 +2708,10 @@
                 topics = weakTopics;
             }
 
-            const todayDateKey = getLocalDateKey();
-
             container.innerHTML = topics.map(item => {
                 const conf = storage.getTopicConfidence('Environmental Science', item.topic);
                 const lastStudied = storage.getLastStudied('Environmental Science', item.topic);
-                const doneToday = lastStudied && (lastStudied.getFullYear() + '-' + String(lastStudied.getMonth() + 1).padStart(2, '0') + '-' + String(lastStudied.getDate()).padStart(2, '0')) === todayDateKey;
+                const doneToday = lastStudied && formatDateKey(lastStudied) === todayKey;
 
                 const confClass = 'conf-' + conf;
                 const doneStyle = doneToday ? ' opacity: 0.5;' : '';
@@ -2721,7 +2725,7 @@
                             ' \u00B7 <span class="confidence-badge confidence-' + conf + '">' + conf.toUpperCase().replace(/-/g, ' ') + '</span>' +
                         '</div>' +
                     '</div>' +
-                    '<button class="countdown-btn" onclick="studyTopic(\'Environmental Science\', \'' + item.topic + '\')">' + btnText + '</button>' +
+                    '<button class="countdown-btn" onclick="studyTopic(\'Environmental Science\', \'' + escHtml(item.topic) + '\')">' + btnText + '</button>' +
                 '</div>';
             }).join('');
         }
@@ -2771,7 +2775,7 @@
                 if (!topic) { allDrillsDone = false; return ''; }
 
                 const lastStudied = storage.getLastStudied(drill.subject, topic);
-                const doneToday = lastStudied && (lastStudied.getFullYear() + '-' + String(lastStudied.getMonth() + 1).padStart(2, '0') + '-' + String(lastStudied.getDate()).padStart(2, '0')) === todayKey;
+                const doneToday = lastStudied && formatDateKey(lastStudied) === todayKey;
 
                 if (!doneToday) allDrillsDone = false;
 
@@ -2843,7 +2847,7 @@
 
             container.innerHTML = priorities.map(p => {
                 const lastStudied = storage.getLastStudied(p.subject, p.topic);
-                const doneToday = lastStudied && (lastStudied.getFullYear() + '-' + String(lastStudied.getMonth() + 1).padStart(2, '0') + '-' + String(lastStudied.getDate()).padStart(2, '0')) === todayKey;
+                const doneToday = lastStudied && formatDateKey(lastStudied) === todayKey;
 
                 if (!doneToday) {
                     allDone = false;
@@ -2893,7 +2897,7 @@
             // Score every topic (skip subjects whose exam has passed)
             // When countdown plan is active, skip EnvSci (handled by countdown section)
             for (const [subject, subjectData] of Object.entries(FLASHCARD_DATA.subjects)) {
-                if (countdownPlanActive && subject === 'Environmental Science') continue;
+                if (isCountdownActive() && subject === 'Environmental Science') continue;
                 const examDate = getSubjectExamDate(subject) || nextExamDate;
                 const daysUntilExam = (examDate - now) / (1000 * 60 * 60 * 24);
                 if (daysUntilExam < 0) continue;
@@ -3031,7 +3035,7 @@
                 for (const topic of Object.keys(subjectData.topics)) {
                     const lastStudied = storage.getLastStudied(subject, topic);
                     if (!lastStudied) continue;
-                    const studiedDate = lastStudied.getFullYear() + '-' + String(lastStudied.getMonth() + 1).padStart(2, '0') + '-' + String(lastStudied.getDate()).padStart(2, '0');
+                    const studiedDate = formatDateKey(lastStudied);
                     if (studiedDate === todayKey) {
                         const confidence = storage.getTopicConfidence(subject, topic);
                         studied.push({ subject, topic, confidence });
