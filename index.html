@@ -2593,7 +2593,6 @@
             activeCollectionCell = cellKey;
         }
 
-        // ===== ENVSCI COUNTDOWN PLAN (Apr 17-22) =====
         const COUNTDOWN_PLAN = {
             '2026-04-17': {
                 day: 1,
@@ -2633,15 +2632,11 @@
                 day: 5,
                 member: 'aespa',
                 label: "aespa says: You're stage-ready",
-                sweep: true,
-                topics: []
+                sweep: true
             },
             '2026-04-22': {
-                day: 0,
                 member: 'aespa',
-                label: '',
-                examDay: true,
-                topics: []
+                examDay: true
             }
         };
 
@@ -2894,10 +2889,9 @@
             const { date: nextExamDate } = getNextExam();
             const now = new Date();
 
-            // Score every topic (skip subjects whose exam has passed)
-            // When countdown plan is active, skip EnvSci (handled by countdown section)
+            const skipEnvSci = isCountdownActive();
             for (const [subject, subjectData] of Object.entries(FLASHCARD_DATA.subjects)) {
-                if (isCountdownActive() && subject === 'Environmental Science') continue;
+                if (skipEnvSci && subject === 'Environmental Science') continue;
                 const examDate = getSubjectExamDate(subject) || nextExamDate;
                 const daysUntilExam = (examDate - now) / (1000 * 60 * 60 * 24);
                 if (daysUntilExam < 0) continue;
@@ -3326,9 +3320,6 @@
             const msg = document.getElementById('reset-msg');
             msg.style.display = 'block';
             setTimeout(() => { msg.style.display = 'none'; }, 2000);
-            renderCountdownPlan();
-            renderPriorities();
-            renderDailyDrill();
         }
 
         function exportData() {
