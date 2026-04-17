@@ -2837,9 +2837,8 @@
 
         function renderMasteryTracker() {
             const container = document.getElementById('mastery-tracker');
-            if (!isCountdownActive()) { container.innerHTML = ''; return; }
             const plan = COUNTDOWN_PLAN[getLocalDateKey()];
-            if (plan.examDay) { container.innerHTML = ''; return; }
+            if (!plan || plan.examDay) { container.innerHTML = ''; return; }
 
             let masteredCount = 0;
             const dots = MASTERY_TOPICS.map(t => {
@@ -2865,8 +2864,10 @@
             if (allMastered && !masteryRewardShown) {
                 masteryRewardShown = true;
                 const rewardKey = storage.prefix + 'mastery_reward_shown';
-                if (!localStorage.getItem(rewardKey)) {
+                if (!storage.cache[rewardKey] && !localStorage.getItem(rewardKey)) {
+                    storage.cache[rewardKey] = 'true';
                     localStorage.setItem(rewardKey, 'true');
+                    storage._firebaseWrite({ [rewardKey]: 'true' });
                     setTimeout(function() { showMasteryReward(); }, 600);
                 }
             }
@@ -2914,7 +2915,7 @@
         function tryPlayRewardAudio() {
             rewardAudio = new Audio('photos/reward-clip.mp3');
             rewardAudio.volume = 0.7;
-            var playPromise = rewardAudio.play();
+            const playPromise = rewardAudio.play();
             if (playPromise !== undefined) {
                 playPromise.catch(function() {
                     document.getElementById('reward-audio-btn').style.display = 'block';
