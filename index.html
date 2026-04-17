@@ -228,6 +228,99 @@
             line-height: 1.6;
         }
 
+        .mastery-tracker {
+            margin-top: 16px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+        }
+
+        .mastery-tracker-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #8090b0;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .mastery-dots {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .mastery-dot {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            min-width: 56px;
+        }
+
+        .mastery-dot-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid #4a5a7a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #4a5a7a;
+            transition: all 0.3s ease;
+        }
+
+        .mastery-dot.mastered .mastery-dot-circle {
+            border-color: #f0c040;
+            background: rgba(240, 192, 64, 0.15);
+            color: #f0c040;
+        }
+
+        .mastery-dot-label {
+            font-size: 9px;
+            color: #6a7a9a;
+            text-align: center;
+            max-width: 60px;
+            line-height: 1.2;
+        }
+
+        .mastery-dot.mastered .mastery-dot-label {
+            color: #c0a040;
+        }
+
+        .mastery-complete {
+            text-align: center;
+            padding: 12px;
+            color: #f0c040;
+            font-size: 14px;
+            font-weight: 600;
+            animation: masteryGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes masteryGlow {
+            from { text-shadow: 0 0 4px rgba(240, 192, 64, 0.3); }
+            to { text-shadow: 0 0 12px rgba(240, 192, 64, 0.6); }
+        }
+
+        .mastery-star {
+            color: #f0c040;
+            margin-left: 4px;
+        }
+
+        .reward-audio-btn {
+            display: none;
+            margin: 8px auto;
+            padding: 6px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            color: #fff;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
         .priorities-section {
             margin-bottom: 30px;
         }
@@ -1424,6 +1517,7 @@
                 <div class="section-title" id="countdown-plan-title"></div>
                 <div class="countdown-day-label" id="countdown-plan-label"></div>
                 <div id="countdown-plan-container"></div>
+                <div id="mastery-tracker"></div>
             </div>
 
             <div class="priorities-section">
@@ -1564,6 +1658,7 @@
             <div class="reward-photo" id="reward-photo"></div>
             <div class="reward-member" id="reward-member"></div>
             <div class="reward-text" id="reward-text"></div>
+            <button class="reward-audio-btn" id="reward-audio-btn" onclick="event.stopPropagation(); playRewardAudio()">&#9654; Play</button>
             <div class="reward-dismiss">tap anywhere to close</div>
         </div>
     </div>
@@ -2482,6 +2577,8 @@
             }
             const modal = document.getElementById('reward-modal');
             modal.classList.remove('visible');
+            if (rewardAudio) { rewardAudio.pause(); rewardAudio = null; }
+            document.getElementById('reward-audio-btn').style.display = 'none';
             setTimeout(() => {
                 modal.classList.remove('show');
             }, 300);
@@ -2712,10 +2809,12 @@
                 const doneStyle = doneToday ? ' opacity: 0.5;' : '';
                 const checkmark = doneToday ? ' \u2705' : '';
                 const btnText = doneToday ? 'Redo' : 'Go';
+                const isMasteryTopic = MASTERY_TOPICS.some(function(m) { return m.topic === item.topic; });
+                const masteredStar = (isMasteryTopic && conf === 'got-it') ? '<span class="mastery-star">\u2605</span>' : '';
 
                 return '<div class="countdown-topic ' + confClass + '" style="' + doneStyle + '">' +
                     '<div>' +
-                        '<div class="countdown-topic-name">' + item.topic.replace(/-/g, ' ') + checkmark + '</div>' +
+                        '<div class="countdown-topic-name">' + item.topic.replace(/-/g, ' ') + masteredStar + checkmark + '</div>' +
                         '<div class="countdown-topic-tag">' + item.tag +
                             ' \u00B7 <span class="confidence-badge confidence-' + conf + '">' + conf.toUpperCase().replace(/-/g, ' ') + '</span>' +
                         '</div>' +
@@ -2725,8 +2824,115 @@
             }).join('');
         }
 
+        const MASTERY_TOPICS = [
+            { topic: 'Water', label: 'Water' },
+            { topic: 'Waste-Management', label: 'Waste' },
+            { topic: 'Experimental-Skills', label: 'Exp Skills' },
+            { topic: 'Biosphere', label: 'Bio' },
+            { topic: 'Numeracy-and-Graphs', label: 'Numeracy' }
+        ];
+
+        let masteryRewardShown = false;
+        let rewardAudio = null;
+
+        function renderMasteryTracker() {
+            const container = document.getElementById('mastery-tracker');
+            if (!isCountdownActive()) { container.innerHTML = ''; return; }
+            const plan = COUNTDOWN_PLAN[getLocalDateKey()];
+            if (plan.examDay) { container.innerHTML = ''; return; }
+
+            let masteredCount = 0;
+            const dots = MASTERY_TOPICS.map(t => {
+                const conf = storage.getTopicConfidence('Environmental Science', t.topic);
+                const mastered = conf === 'got-it';
+                if (mastered) masteredCount++;
+                return '<div class="mastery-dot' + (mastered ? ' mastered' : '') + '">' +
+                    '<div class="mastery-dot-circle">' + (mastered ? '\u2605' : '\u25CB') + '</div>' +
+                    '<div class="mastery-dot-label">' + t.label + '</div>' +
+                '</div>';
+            });
+
+            const allMastered = masteredCount === MASTERY_TOPICS.length;
+
+            container.innerHTML = '<div class="mastery-tracker">' +
+                '<div class="mastery-tracker-title">' +
+                    (allMastered ? 'All topics mastered!' : masteredCount + ' of ' + MASTERY_TOPICS.length + ' topics to master') +
+                '</div>' +
+                '<div class="mastery-dots">' + dots.join('') + '</div>' +
+                (allMastered ? '<div class="mastery-complete">\u2728 Countdown complete \u2728</div>' : '') +
+            '</div>';
+
+            if (allMastered && !masteryRewardShown) {
+                masteryRewardShown = true;
+                const rewardKey = storage.prefix + 'mastery_reward_shown';
+                if (!localStorage.getItem(rewardKey)) {
+                    localStorage.setItem(rewardKey, 'true');
+                    setTimeout(function() { showMasteryReward(); }, 600);
+                }
+            }
+        }
+
+        function showMasteryReward() {
+            const photos = ['photos/aespa-1.jpg', 'photos/aespa-2.jpg', 'photos/aespa-3.jpg', 'photos/aespa-4.jpg', 'photos/aespa-5.jpg', 'photos/aespa-6.jpg'];
+            const photo = photos[Math.floor(Math.random() * photos.length)];
+
+            const photoEl = document.getElementById('reward-photo');
+            const img = new Image();
+            img.src = photo;
+            img.alt = 'aespa';
+            img.onerror = function() {
+                photoEl.innerHTML = '<div class="reward-photo-fallback">ae</div>';
+            };
+            img.onload = function() {
+                photoEl.innerHTML = '';
+                photoEl.appendChild(img);
+            };
+            photoEl.innerHTML = '<div class="reward-photo-fallback">ae</div>';
+
+            document.getElementById('reward-member').textContent = 'aespa';
+            document.getElementById('reward-text').innerHTML =
+                '<span class="reward-hook">Five topics. All mastered. Karina planned, Giselle filled gaps, Winter locked details, NingNing ran it back. You did the work.</span>' +
+                '<span class="reward-closer">aespa says: you are ready for this.</span>';
+
+            const collectionKey = storage.prefix + 'collection_aespa_countdown_0';
+            if (!storage.cache[collectionKey]) {
+                storage.cache[collectionKey] = JSON.stringify({ member: 'aespa', subject: 'Environmental Science', hook: 'Countdown Complete: all 5 topics mastered before exam day.', closer: 'aespa says: you are ready for this.', hookIndex: 0, date: new Date().toISOString(), special: true });
+                localStorage.setItem(collectionKey, storage.cache[collectionKey]);
+                storage._firebaseWrite({ [collectionKey]: storage.cache[collectionKey] });
+            }
+
+            const modal = document.getElementById('reward-modal');
+            modal.classList.add('show');
+            requestAnimationFrame(function() {
+                requestAnimationFrame(function() {
+                    modal.classList.add('visible');
+                    tryPlayRewardAudio();
+                });
+            });
+        }
+
+        function tryPlayRewardAudio() {
+            rewardAudio = new Audio('photos/reward-clip.mp3');
+            rewardAudio.volume = 0.7;
+            var playPromise = rewardAudio.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(function() {
+                    document.getElementById('reward-audio-btn').style.display = 'block';
+                });
+            }
+        }
+
+        function playRewardAudio() {
+            if (rewardAudio) {
+                rewardAudio.currentTime = 0;
+                rewardAudio.play();
+                document.getElementById('reward-audio-btn').style.display = 'none';
+            }
+        }
+
         function renderToday() {
             renderCountdownPlan();
+            renderMasteryTracker();
             renderDailyDrill();
             renderPriorities();
             renderStudiedToday();
