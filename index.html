@@ -146,6 +146,88 @@
             transform: scale(0.96);
         }
 
+        .countdown-plan {
+            background: linear-gradient(135deg, #2d3a5a 0%, #1f2a4a 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #4a6a9a;
+        }
+
+        .countdown-plan .section-title {
+            color: #7ab0ff;
+        }
+
+        .countdown-day-label {
+            font-size: 13px;
+            color: #a0c0ff;
+            margin-bottom: 12px;
+            font-style: italic;
+        }
+
+        .countdown-topic {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            margin-top: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border-left: 3px solid #4a6a9a;
+        }
+
+        .countdown-topic.conf-got-it {
+            border-left-color: #4a9a5a;
+            opacity: 0.6;
+        }
+
+        .countdown-topic.conf-mostly {
+            border-left-color: #c0a030;
+        }
+
+        .countdown-topic.conf-not-yet {
+            border-left-color: #c05040;
+        }
+
+        .countdown-topic.conf-unrated {
+            border-left-color: #6a7a9a;
+        }
+
+        .countdown-topic-name {
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .countdown-topic-tag {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #8090b0;
+            margin-top: 3px;
+        }
+
+        .countdown-btn {
+            padding: 8px 20px;
+            background: #4a6a9a;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .countdown-btn:active {
+            transform: scale(0.96);
+        }
+
+        .countdown-done-msg {
+            text-align: center;
+            padding: 24px;
+            color: #b0e0c0;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
         .priorities-section {
             margin-bottom: 30px;
         }
@@ -1338,6 +1420,12 @@
                 <div id="daily-drill-container"></div>
             </div>
 
+            <div id="countdown-plan-section" class="countdown-plan" style="display:none;">
+                <div class="section-title" id="countdown-plan-title"></div>
+                <div class="countdown-day-label" id="countdown-plan-label"></div>
+                <div id="countdown-plan-container"></div>
+            </div>
+
             <div class="priorities-section">
                 <div class="section-title">Your Priorities Today</div>
                 <div id="priorities-container"></div>
@@ -2504,7 +2592,142 @@
             activeCollectionCell = cellKey;
         }
 
+        // ===== ENVSCI COUNTDOWN PLAN (Apr 17-22) =====
+        const COUNTDOWN_PLAN = {
+            '2026-04-17': {
+                day: 1,
+                member: 'Karina',
+                label: "Karina's plan: Check your positions",
+                topics: [
+                    { topic: 'Human-Influences', tag: 'Quick check' },
+                    { topic: 'Interdependence', tag: 'Quick check' },
+                    { topic: 'Water', tag: 'New material' }
+                ]
+            },
+            '2026-04-18': {
+                day: 2,
+                member: 'Giselle',
+                label: "Giselle's plan: Fill in the gaps",
+                topics: [
+                    { topic: 'Waste-Management', tag: 'New material' },
+                    { topic: 'Numeracy-and-Graphs', tag: 'Sharpen up' }
+                ]
+            },
+            '2026-04-19': {
+                day: 3,
+                member: 'Winter',
+                label: "Winter's plan: Lock in the details",
+                topics: [
+                    { topic: 'Experimental-Skills', tag: 'New material' },
+                    { topic: 'Biosphere', tag: 'Sharpen up' }
+                ]
+            },
+            '2026-04-20': {
+                day: 4,
+                member: 'NingNing',
+                label: "NingNing's plan: Run it back",
+                retest: true,
+                topics: [
+                    { topic: 'Water', tag: 'Revisit' },
+                    { topic: 'Waste-Management', tag: 'Revisit' },
+                    { topic: 'Experimental-Skills', tag: 'Revisit' }
+                ]
+            },
+            '2026-04-21': {
+                day: 5,
+                member: 'aespa',
+                label: "aespa says: You're stage-ready",
+                sweep: true,
+                topics: []
+            },
+            '2026-04-22': {
+                day: 0,
+                member: 'aespa',
+                label: '',
+                examDay: true,
+                topics: []
+            }
+        };
+
+        let countdownPlanActive = false;
+
+        function renderCountdownPlan() {
+            const section = document.getElementById('countdown-plan-section');
+            const titleEl = document.getElementById('countdown-plan-title');
+            const labelEl = document.getElementById('countdown-plan-label');
+            const container = document.getElementById('countdown-plan-container');
+            const todayKey = getLocalDateKey();
+            const plan = COUNTDOWN_PLAN[todayKey];
+
+            if (!plan) {
+                section.style.display = 'none';
+                countdownPlanActive = false;
+                return;
+            }
+
+            countdownPlanActive = true;
+            section.style.display = '';
+
+            if (plan.examDay) {
+                titleEl.textContent = 'Env Sci Exam Day';
+                labelEl.textContent = '';
+                container.innerHTML = '<div class="countdown-done-msg">' +
+                    'Karina checked positions. Giselle filled gaps. Winter locked details. NingNing ran it back.<br><br>' +
+                    '<strong>aespa says: go smash it.</strong></div>';
+                return;
+            }
+
+            titleEl.textContent = 'EnvSci Countdown: Day ' + plan.day + ' of 5';
+            labelEl.textContent = plan.label;
+
+            let topics = plan.topics;
+
+            if (plan.sweep) {
+                const weakTopics = [];
+                const envsciTopics = Object.keys(FLASHCARD_DATA.subjects['Environmental Science'].topics);
+                for (const t of envsciTopics) {
+                    const conf = storage.getTopicConfidence('Environmental Science', t);
+                    if (conf !== 'got-it') {
+                        weakTopics.push({ topic: t, tag: conf === 'not-yet' ? 'Needs work' : conf === 'mostly' ? 'Nearly there' : 'Unrated' });
+                    }
+                }
+
+                if (weakTopics.length === 0) {
+                    container.innerHTML = '<div class="countdown-done-msg">' +
+                        'Karina checked positions. Giselle filled gaps.<br>Winter locked details. NingNing ran it back.<br><br>' +
+                        '<strong>Every topic is got-it. You\'re ready. \u2728</strong></div>';
+                    return;
+                }
+
+                topics = weakTopics;
+            }
+
+            const todayDateKey = getLocalDateKey();
+
+            container.innerHTML = topics.map(item => {
+                const conf = storage.getTopicConfidence('Environmental Science', item.topic);
+                const lastStudied = storage.getLastStudied('Environmental Science', item.topic);
+                const doneToday = lastStudied && (lastStudied.getFullYear() + '-' + String(lastStudied.getMonth() + 1).padStart(2, '0') + '-' + String(lastStudied.getDate()).padStart(2, '0')) === todayDateKey;
+
+                const confClass = 'conf-' + conf;
+                const doneStyle = doneToday ? ' opacity: 0.5;' : '';
+                const checkmark = doneToday ? ' \u2705' : '';
+                const btnText = doneToday ? 'Redo' : 'Go';
+
+                return '<div class="countdown-topic ' + confClass + '" style="' + doneStyle + '">' +
+                    '<div>' +
+                        '<div class="countdown-topic-name">' + item.topic.replace(/-/g, ' ') + checkmark + '</div>' +
+                        '<div class="countdown-topic-tag">' + item.tag +
+                            ' \u00B7 <span class="confidence-badge confidence-' + conf + '">' + conf.toUpperCase().replace(/-/g, ' ') + '</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<button class="countdown-btn" onclick="studyTopic(\'Environmental Science\', \'' + item.topic + '\')">' + btnText + '</button>' +
+                '</div>';
+            }).join('');
+        }
+
         function renderToday() {
+            renderCountdownPlan();
             renderDailyDrill();
             renderPriorities();
             renderStudiedToday();
@@ -2668,7 +2891,9 @@
             const now = new Date();
 
             // Score every topic (skip subjects whose exam has passed)
+            // When countdown plan is active, skip EnvSci (handled by countdown section)
             for (const [subject, subjectData] of Object.entries(FLASHCARD_DATA.subjects)) {
+                if (countdownPlanActive && subject === 'Environmental Science') continue;
                 const examDate = getSubjectExamDate(subject) || nextExamDate;
                 const daysUntilExam = (examDate - now) / (1000 * 60 * 60 * 24);
                 if (daysUntilExam < 0) continue;
@@ -3097,6 +3322,7 @@
             const msg = document.getElementById('reset-msg');
             msg.style.display = 'block';
             setTimeout(() => { msg.style.display = 'none'; }, 2000);
+            renderCountdownPlan();
             renderPriorities();
             renderDailyDrill();
         }
