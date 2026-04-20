@@ -2654,10 +2654,12 @@
                 if (!val) return;
                 try {
                     const card = JSON.parse(val);
+                    var hookSafe = escHtml(card.hook).replace(/'/g, '\\&#39;');
+                    var closerSafe = escHtml(card.closer).replace(/'/g, '\\&#39;');
                     specialHtml += '<div class="special-collection-card">' +
                         '<div class="special-collection-label">' + escHtml(sk.label) + '</div>' +
                         '<div class="special-collection-text">' + escHtml(card.hook) + ' ' + escHtml(card.closer) + '</div>' +
-                        (sk.audio ? '<button class="reward-audio-btn" style="display:block;margin-top:8px" onclick="event.stopPropagation();playSpecialAudio()">&#9654; Play Supernova</button>' : '') +
+                        (sk.audio ? '<button class="reward-audio-btn" style="display:block;margin-top:8px" onclick="event.stopPropagation();playSpecialAudio(\'' + hookSafe + '\',\'' + closerSafe + '\')">&#9654; Play Supernova</button>' : '') +
                         '</div>';
                 } catch (e) { /* skip */ }
             });
@@ -2970,11 +2972,39 @@
             }
         }
 
-        function playSpecialAudio() {
-            if (rewardAudio) { rewardAudio.pause(); }
-            rewardAudio = new Audio('photos/reward-clip.mp3');
-            rewardAudio.volume = 0.7;
-            rewardAudio.play();
+        function playSpecialAudio(hookText, closerText) {
+            var photos = ['photos/aespa-1.jpg', 'photos/aespa-2.jpg', 'photos/aespa-3.jpg', 'photos/aespa-4.jpg', 'photos/aespa-5.jpg', 'photos/aespa-6.jpg'];
+            var photo = photos[Math.floor(Math.random() * photos.length)];
+
+            var photoEl = document.getElementById('reward-photo');
+            var img = new Image();
+            img.src = photo;
+            img.alt = 'aespa';
+            img.onerror = function() { photoEl.innerHTML = '<div class="reward-photo-fallback">ae</div>'; };
+            img.onload = function() { photoEl.innerHTML = ''; photoEl.appendChild(img); };
+            photoEl.innerHTML = '<div class="reward-photo-fallback">ae</div>';
+
+            document.getElementById('reward-member').textContent = 'aespa';
+            document.getElementById('reward-text').innerHTML =
+                '<span class="reward-hook">' + (hookText || '') + '</span>' +
+                '<span class="reward-closer">' + (closerText || '') + '</span>';
+
+            var modal = document.getElementById('reward-modal');
+            modal.classList.add('show');
+            requestAnimationFrame(function() {
+                requestAnimationFrame(function() {
+                    modal.classList.add('visible');
+                    if (rewardAudio) { rewardAudio.pause(); }
+                    rewardAudio = new Audio('photos/reward-clip.mp3');
+                    rewardAudio.volume = 0.7;
+                    var playPromise = rewardAudio.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(function() {
+                            document.getElementById('reward-audio-btn').style.display = 'block';
+                        });
+                    }
+                });
+            });
         }
 
         let finalBossRewardShown = false;
