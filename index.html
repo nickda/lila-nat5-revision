@@ -2729,7 +2729,8 @@
                 day: 5,
                 member: 'aespa',
                 label: "aespa says: You're stage-ready",
-                sweep: true
+                sweep: true,
+                pinnedTopic: { topic: 'KWANGYA-Final-Boss', tag: 'Final Boss' }
             },
             '2026-04-22': {
                 member: 'aespa',
@@ -2782,8 +2783,12 @@
 
             if (plan.sweep) {
                 const weakTopics = [];
+                if (plan.pinnedTopic) {
+                    weakTopics.push(plan.pinnedTopic);
+                }
                 const envsciTopics = Object.keys(FLASHCARD_DATA.subjects['Environmental Science'].topics);
                 for (const t of envsciTopics) {
+                    if (plan.pinnedTopic && t === plan.pinnedTopic.topic) continue;
                     const conf = storage.getTopicConfidence('Environmental Science', t);
                     if (conf !== 'got-it') {
                         weakTopics.push({ topic: t, tag: conf === 'not-yet' ? 'Needs work' : conf === 'mostly' ? 'Nearly there' : 'Unrated' });
