@@ -3032,6 +3032,12 @@
                     modal.classList.add('visible');
                     rewardAudio = new Audio('photos/reward-clip.mp3');
                     rewardAudio.volume = 0.7;
+                    rewardAudio.addEventListener('ended', function() {
+                        modal.classList.remove('locked');
+                    });
+                    rewardAudio.addEventListener('error', function() {
+                        modal.classList.remove('locked');
+                    });
                     var playPromise = rewardAudio.play();
                     if (playPromise !== undefined) {
                         playPromise.catch(function() {
@@ -3041,7 +3047,7 @@
                     }
                     setTimeout(function() {
                         modal.classList.remove('locked');
-                    }, 12500);
+                    }, 15000);
                 });
             });
         }
