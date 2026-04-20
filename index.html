@@ -2648,26 +2648,50 @@
                 { key: storage.prefix + 'collection_aespa_final_boss_0', label: 'KWANGYA Final Boss', audio: true },
                 { key: storage.prefix + 'collection_aespa_countdown_0', label: 'Countdown Complete', audio: true }
             ];
-            let specialHtml = '';
+            var specialCards = [];
             specialKeys.forEach(function(sk) {
-                const val = storage.cache[sk.key] || localStorage.getItem(sk.key);
+                var val = storage.cache[sk.key] || localStorage.getItem(sk.key);
                 if (!val) return;
                 try {
-                    const card = JSON.parse(val);
-                    var hookSafe = escHtml(card.hook).replace(/'/g, '\\&#39;');
-                    var closerSafe = escHtml(card.closer).replace(/'/g, '\\&#39;');
-                    specialHtml += '<div class="special-collection-card">' +
-                        '<div class="special-collection-label">' + escHtml(sk.label) + '</div>' +
-                        '<div class="special-collection-text">' + escHtml(card.hook) + ' ' + escHtml(card.closer) + '</div>' +
-                        (sk.audio ? '<button class="reward-audio-btn" style="display:block;margin-top:8px" onclick="event.stopPropagation();playSpecialAudio(\'' + hookSafe + '\',\'' + closerSafe + '\')">&#9654; Play Supernova</button>' : '') +
-                        '</div>';
+                    var card = JSON.parse(val);
+                    if (typeof card.hook === 'string' && typeof card.closer === 'string') {
+                        specialCards.push({ label: sk.label, hook: card.hook, closer: card.closer, audio: sk.audio });
+                    }
                 } catch (e) { /* skip */ }
             });
-            if (specialHtml) {
-                document.getElementById('collection-grid').insertAdjacentHTML('afterend',
-                    '<div id="special-collection" style="margin-top:16px;padding:12px;background:rgba(180,120,255,0.1);border-radius:12px">' +
-                    '<div style="color:#b0c4ff;font-size:13px;margin-bottom:8px;font-weight:600">Special Cards</div>' +
-                    specialHtml + '</div>');
+            if (specialCards.length > 0) {
+                var specialDiv = document.createElement('div');
+                specialDiv.id = 'special-collection';
+                specialDiv.style.cssText = 'margin-top:16px;padding:12px;background:rgba(180,120,255,0.1);border-radius:12px';
+                var header = document.createElement('div');
+                header.style.cssText = 'color:#b0c4ff;font-size:13px;margin-bottom:8px;font-weight:600';
+                header.textContent = 'Special Cards';
+                specialDiv.appendChild(header);
+                specialCards.forEach(function(sc) {
+                    var cardDiv = document.createElement('div');
+                    cardDiv.className = 'special-collection-card';
+                    var labelDiv = document.createElement('div');
+                    labelDiv.className = 'special-collection-label';
+                    labelDiv.textContent = sc.label;
+                    var textDiv = document.createElement('div');
+                    textDiv.className = 'special-collection-text';
+                    textDiv.textContent = sc.hook + ' ' + sc.closer;
+                    cardDiv.appendChild(labelDiv);
+                    cardDiv.appendChild(textDiv);
+                    if (sc.audio) {
+                        var btn = document.createElement('button');
+                        btn.className = 'reward-audio-btn';
+                        btn.style.cssText = 'display:block;margin-top:8px';
+                        btn.innerHTML = '&#9654; Play Supernova';
+                        btn.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            playSpecialAudio(sc.hook, sc.closer);
+                        });
+                        cardDiv.appendChild(btn);
+                    }
+                    specialDiv.appendChild(cardDiv);
+                });
+                document.getElementById('collection-grid').after(specialDiv);
             }
         }
 
