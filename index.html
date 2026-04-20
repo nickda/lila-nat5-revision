@@ -1428,6 +1428,11 @@
             z-index: 10;
         }
         .reward-close:hover { background: rgba(255,255,255,0.1); }
+        .reward-modal.locked .reward-close,
+        .reward-modal.locked .reward-dismiss { display: none !important; }
+        .special-collection-card { margin-bottom: 10px; }
+        .special-collection-label { color: #ffd47a; font-weight: 600; font-size: 14px; }
+        .special-collection-text { color: #c8d6f0; font-size: 13px; margin-top: 4px; line-height: 1.5; }
 
         .study-timer {
             position: fixed;
@@ -2571,16 +2576,18 @@
         }
 
         function dismissReward() {
+            const modal = document.getElementById('reward-modal');
+            if (modal.classList.contains('locked')) return;
             if (rewardTimeout) {
                 clearTimeout(rewardTimeout);
                 rewardTimeout = null;
             }
-            const modal = document.getElementById('reward-modal');
             modal.classList.remove('visible');
             if (rewardAudio) { rewardAudio.pause(); rewardAudio = null; }
             document.getElementById('reward-audio-btn').style.display = 'none';
             setTimeout(() => {
                 modal.classList.remove('show');
+                modal.classList.remove('locked');
             }, 300);
         }
 
@@ -2633,6 +2640,33 @@
             });
 
             document.getElementById('collection-grid').innerHTML = html;
+
+            const oldSpecial = document.getElementById('special-collection');
+            if (oldSpecial) oldSpecial.remove();
+
+            const specialKeys = [
+                { key: storage.prefix + 'collection_aespa_final_boss_0', label: 'KWANGYA Final Boss', audio: true },
+                { key: storage.prefix + 'collection_aespa_countdown_0', label: 'Countdown Complete', audio: true }
+            ];
+            let specialHtml = '';
+            specialKeys.forEach(function(sk) {
+                const val = storage.cache[sk.key] || localStorage.getItem(sk.key);
+                if (!val) return;
+                try {
+                    const card = JSON.parse(val);
+                    specialHtml += '<div class="special-collection-card">' +
+                        '<div class="special-collection-label">' + escHtml(sk.label) + '</div>' +
+                        '<div class="special-collection-text">' + escHtml(card.hook) + ' ' + escHtml(card.closer) + '</div>' +
+                        (sk.audio ? '<button class="reward-audio-btn" style="display:block;margin-top:8px" onclick="event.stopPropagation();playSpecialAudio()">&#9654; Play Supernova</button>' : '') +
+                        '</div>';
+                } catch (e) { /* skip */ }
+            });
+            if (specialHtml) {
+                document.getElementById('collection-grid').insertAdjacentHTML('afterend',
+                    '<div id="special-collection" style="margin-top:16px;padding:12px;background:rgba(180,120,255,0.1);border-radius:12px">' +
+                    '<div style="color:#b0c4ff;font-size:13px;margin-bottom:8px;font-weight:600">Special Cards</div>' +
+                    specialHtml + '</div>');
+            }
         }
 
         let activeCollectionCell = null;
@@ -2934,6 +2968,82 @@
                 rewardAudio.play();
                 document.getElementById('reward-audio-btn').style.display = 'none';
             }
+        }
+
+        function playSpecialAudio() {
+            if (rewardAudio) { rewardAudio.pause(); }
+            rewardAudio = new Audio('photos/reward-clip.mp3');
+            rewardAudio.volume = 0.7;
+            rewardAudio.play();
+        }
+
+        let finalBossRewardShown = false;
+
+        function checkFinalBossComplete() {
+            if (finalBossRewardShown) return;
+            const topic = FLASHCARD_DATA.subjects['Environmental Science'].topics['KWANGYA-Final-Boss'];
+            if (!topic) return;
+            const allCards = (topic.definitions || []).concat(topic.questions || []);
+            const allRated = allCards.every(function(c) {
+                return storage.getCardConfidence('Environmental Science', 'KWANGYA-Final-Boss', c.id) !== 'unrated';
+            });
+            if (!allRated) return;
+            finalBossRewardShown = true;
+            const rewardKey = storage.prefix + 'final_boss_reward_shown';
+            if (localStorage.getItem(rewardKey)) return;
+            localStorage.setItem(rewardKey, 'true');
+            storage._firebaseWrite({ [rewardKey]: 'true' });
+            setTimeout(function() { showFinalBossReward(); }, 600);
+        }
+
+        function showFinalBossReward() {
+            const photos = ['photos/aespa-1.jpg', 'photos/aespa-2.jpg', 'photos/aespa-3.jpg', 'photos/aespa-4.jpg', 'photos/aespa-5.jpg', 'photos/aespa-6.jpg'];
+            const photo = photos[Math.floor(Math.random() * photos.length)];
+
+            const photoEl = document.getElementById('reward-photo');
+            const img = new Image();
+            img.src = photo;
+            img.alt = 'aespa';
+            img.onerror = function() {
+                photoEl.innerHTML = '<div class="reward-photo-fallback">ae</div>';
+            };
+            img.onload = function() {
+                photoEl.innerHTML = '';
+                photoEl.appendChild(img);
+            };
+            photoEl.innerHTML = '<div class="reward-photo-fallback">ae</div>';
+
+            document.getElementById('reward-member').textContent = 'aespa';
+            document.getElementById('reward-text').innerHTML =
+                '<span class="reward-hook">KWANGYA Final Boss: cleared. 14 cards, all got-it. The hard ones, the ones you kept coming back to.</span>' +
+                '<span class="reward-closer">aespa says: nothing left to fear. Go show them.</span>';
+
+            const collectionKey = storage.prefix + 'collection_aespa_final_boss_0';
+            if (!storage.cache[collectionKey]) {
+                storage.cache[collectionKey] = JSON.stringify({ member: 'aespa', subject: 'Environmental Science', hook: 'KWANGYA Final Boss cleared: 14 weak cards, all mastered.', closer: 'aespa says: nothing left to fear. Go show them.', hookIndex: 0, date: new Date().toISOString(), special: true });
+                localStorage.setItem(collectionKey, storage.cache[collectionKey]);
+                storage._firebaseWrite({ [collectionKey]: storage.cache[collectionKey] });
+            }
+
+            const modal = document.getElementById('reward-modal');
+            modal.classList.add('show', 'locked');
+            requestAnimationFrame(function() {
+                requestAnimationFrame(function() {
+                    modal.classList.add('visible');
+                    rewardAudio = new Audio('photos/reward-clip.mp3');
+                    rewardAudio.volume = 0.7;
+                    var playPromise = rewardAudio.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(function() {
+                            modal.classList.remove('locked');
+                            document.getElementById('reward-audio-btn').style.display = 'block';
+                        });
+                    }
+                    setTimeout(function() {
+                        modal.classList.remove('locked');
+                    }, 12500);
+                });
+            });
         }
 
         function renderToday() {
@@ -3649,6 +3759,10 @@
                     }).length;
                     if (allCurrentCards > 0 && ratedCount >= allCurrentCards) {
                         trySessionReward();
+                    }
+
+                    if (card.topic === 'KWANGYA-Final-Boss') {
+                        checkFinalBossComplete();
                     }
 
                     flashcardEngine.next();
