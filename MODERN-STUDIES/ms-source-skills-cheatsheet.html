@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Modern Studies: Source Skills Cheat Sheet</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink:    #1a1a2e;
+    --mid:    #2d3561;
+    --accent: #e94560;
+    --green:  #0f7a55;
+    --amber:  #b45309;
+    --bg:     #ffffff;
+    --rule:   #e2e8f0;
+    --soft:   #f7f9fc;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 9.5pt;
+    line-height: 1.4;
+  }
+
+  /* ── PRINT ── */
+  @page { size: A4; margin: 10mm 11mm; }
+  @media print {
+    body { font-size: 9pt; }
+    .page { padding: 0; box-shadow: none; }
+    .no-print { display: none; }
+  }
+
+  /* ── LAYOUT ── */
+  .page {
+    width: 190mm;
+    margin: 0 auto;
+    padding: 8mm 0;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    border-bottom: 3px solid var(--ink);
+    padding-bottom: 5px;
+    margin-bottom: 9px;
+  }
+  .header h1 {
+    font-size: 16pt;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+  }
+  .header .meta {
+    font-size: 8pt;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── UNIVERSAL BOX ── */
+  .universal {
+    background: var(--ink);
+    color: #fff;
+    border-radius: 6px;
+    padding: 7px 11px;
+    margin-bottom: 9px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .universal strong {
+    font-size: 7.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    opacity: 0.7;
+    white-space: nowrap;
+  }
+  .universal .rules {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    font-size: 8.5pt;
+  }
+  .universal .rules span { white-space: nowrap; }
+  .universal .rules .warn { color: #fbbf24; font-weight: 700; }
+
+  /* ── THREE COLUMNS ── */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 7px;
+    margin-bottom: 8px;
+  }
+
+  /* ── CARD ── */
+  .card {
+    border: 2px solid var(--rule);
+    border-radius: 7px;
+    overflow: hidden;
+  }
+  .card-head {
+    padding: 6px 9px 5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-head .qtype {
+    font-size: 7pt;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    opacity: 0.85;
+  }
+  .card-head .marks {
+    font-size: 10pt;
+    font-weight: 900;
+  }
+  .card-head .title {
+    font-size: 10.5pt;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    margin-top: 1px;
+  }
+  .card-body { padding: 7px 9px 8px; }
+
+  /* CONCLUSIONS */
+  .card-conclusions .card-head { background: #dbeafe; }
+  .card-conclusions .card-head .qtype,
+  .card-conclusions .card-head .marks { color: #1e40af; }
+  .card-conclusions { border-color: #93c5fd; }
+
+  /* OPTIONS */
+  .card-options .card-head { background: #dcfce7; }
+  .card-options .card-head .qtype,
+  .card-options .card-head .marks { color: var(--green); }
+  .card-options { border-color: #86efac; }
+
+  /* SUPPORT/OPPOSE */
+  .card-support .card-head { background: #fef9c3; }
+  .card-support .card-head .qtype,
+  .card-support .card-head .marks { color: var(--amber); }
+  .card-support { border-color: #fde68a; }
+
+  /* ── STRUCTURE BLOCK ── */
+  .struct { margin-bottom: 7px; }
+  .struct-label {
+    font-size: 7pt;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+    margin-bottom: 3px;
+  }
+  .step {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 3px;
+    align-items: flex-start;
+  }
+  .step-num {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--ink);
+    color: #fff;
+    font-size: 7pt;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
+  }
+  .card-conclusions .step-num { background: #1e40af; }
+  .card-options   .step-num { background: var(--green); }
+  .card-support   .step-num { background: var(--amber); }
+
+  .step-text { font-size: 8.5pt; line-height: 1.35; }
+  .step-text b { font-weight: 700; }
+
+  /* ── MARKS TABLE ── */
+  .marks-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 7px;
+    font-size: 8pt;
+  }
+  .marks-table th {
+    background: var(--soft);
+    text-align: left;
+    padding: 3px 5px;
+    font-weight: 700;
+    font-size: 7.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .marks-table td {
+    padding: 3px 5px;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  .marks-table tr:last-child td { border-bottom: none; }
+  .badge {
+    display: inline-block;
+    font-weight: 800;
+    font-size: 8.5pt;
+    min-width: 22px;
+    text-align: center;
+  }
+
+  /* ── TRAPS ── */
+  .traps {
+    background: #fff7ed;
+    border-left: 3px solid var(--accent);
+    border-radius: 0 4px 4px 0;
+    padding: 5px 7px;
+    font-size: 8pt;
+  }
+  .traps .trap-label {
+    font-size: 7pt;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--accent);
+    margin-bottom: 2px;
+  }
+  .traps li {
+    margin-left: 12px;
+    margin-bottom: 1px;
+  }
+
+  /* ── PHRASES STRIP ── */
+  .phrases {
+    border: 2px solid var(--rule);
+    border-radius: 7px;
+    padding: 7px 11px;
+  }
+  .phrases-label {
+    font-size: 7pt;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #64748b;
+    margin-bottom: 5px;
+  }
+  .phrase-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .phrase {
+    background: var(--soft);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 3px 7px;
+    font-size: 8pt;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .phrase.start { border-color: #93c5fd; background: #eff6ff; }
+  .phrase.link  { border-color: #86efac; background: #f0fdf4; }
+  .phrase.eval  { border-color: #fde68a; background: #fefce8; }
+
+  /* ── PRINT BUTTON ── */
+  .no-print {
+    text-align: center;
+    padding: 16px;
+    font-family: sans-serif;
+  }
+  .no-print button {
+    padding: 10px 24px;
+    background: #1a1a2e;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<div class="no-print">
+  <button onclick="window.print()">Print / Save as PDF</button>
+</div>
+
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <h1>Modern Studies: Source Skills</h1>
+    <div class="meta">Exam Tue 19 May &nbsp;·&nbsp; 30 of 80 marks</div>
+  </div>
+
+  <!-- UNIVERSAL RULES -->
+  <div class="universal">
+    <strong>Universal rules (all 3 questions)</strong>
+    <div class="rules">
+      <span>Use <b>all sources</b> for full marks</span>
+      <span class="warn">⚠ 2 sources = max 6</span>
+      <span class="warn">⚠ 1 source = max 4</span>
+      <span>Always say <b>"Source 1 shows..."</b></span>
+      <span>Max 3 marks per developed argument</span>
+    </div>
+  </div>
+
+  <!-- THREE QUESTION CARDS -->
+  <div class="grid">
+
+    <!-- CONCLUSIONS -->
+    <div class="card card-conclusions">
+      <div class="card-head">
+        <div>
+          <div class="qtype">Question type A</div>
+          <div class="title">Conclusions</div>
+        </div>
+        <div class="marks">10</div>
+      </div>
+      <div class="card-body">
+
+        <div class="struct">
+          <div class="struct-label">What to do</div>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-text">Draw <b>one conclusion per bullet point</b> (4 bullets = 4 conclusions)</div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-text">Support each conclusion with evidence from the sources</div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-text">Use evaluative language to reach 3 marks</div>
+          </div>
+        </div>
+
+        <table class="marks-table">
+          <tr>
+            <th>Marks</th>
+            <th>What you need</th>
+          </tr>
+          <tr>
+            <td><span class="badge" style="color:#1e40af">1</span></td>
+            <td>Basic conclusion OR ID info from source — no evidence</td>
+          </tr>
+          <tr>
+            <td><span class="badge" style="color:#1e40af">2</span></td>
+            <td>Conclusion <b>+</b> 1 piece of source evidence</td>
+          </tr>
+          <tr>
+            <td><span class="badge" style="color:#1e40af">3</span></td>
+            <td>Conclusion <b>+</b> 2 pieces evidence <b>+</b> evaluative language</td>
+          </tr>
+        </table>
+
+        <div class="traps">
+          <div class="trap-label">Watch out</div>
+          <ul>
+            <li>Write "Overall..." to signal a real conclusion</li>
+            <li>Cross-reference 2 sources in at least 1 answer</li>
+            <li>Don't just copy numbers — interpret them</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- OPTIONS -->
+    <div class="card card-options">
+      <div class="card-head">
+        <div>
+          <div class="qtype">Question type B</div>
+          <div class="title">Options / Recommend</div>
+        </div>
+        <div class="marks">10</div>
+      </div>
+      <div class="card-body">
+
+        <div class="struct">
+          <div class="struct-label">What to do</div>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-text"><b>State your recommendation</b> at the very start: "I recommend Option 1 because..."</div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-text"><b>Justify</b> your choice with 3–4 developed arguments using source evidence</div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-text"><b>Reject</b> the other option — explain why it is worse, using source evidence</div>
+          </div>
+        </div>
+
+        <table class="marks-table">
+          <tr>
+            <th>Cap</th>
+            <th>Condition</th>
+          </tr>
+          <tr>
+            <td><span class="badge" style="color:var(--green)">Max 8</span></td>
+            <td>Only justify chosen option, no rejection</td>
+          </tr>
+          <tr>
+            <td><span class="badge" style="color:var(--green)">Max 3</span></td>
+            <td>Any single justification point</td>
+          </tr>
+        </table>
+
+        <div class="traps">
+          <div class="trap-label">Watch out</div>
+          <ul>
+            <li>You <b>must</b> reject the other option for full marks</li>
+            <li>Don't forget to say which option you picked</li>
+            <li>Use evidence to reject, not just opinion</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SUPPORT / OPPOSE -->
+    <div class="card card-support">
+      <div class="card-head">
+        <div>
+          <div class="qtype">Question type C</div>
+          <div class="title">Support / Oppose</div>
+        </div>
+        <div class="marks">10</div>
+      </div>
+      <div class="card-body">
+
+        <div class="struct">
+          <div class="struct-label">What to do</div>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-text">Explain why the given view is <b>SUPPORTED</b> by the sources (2–3 points)</div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-text">Explain why the given view is <b>OPPOSED</b> by the sources (2–3 points)</div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-text">Each point: state → explain → link to source evidence</div>
+          </div>
+        </div>
+
+        <table class="marks-table">
+          <tr>
+            <th>Cap</th>
+            <th>Condition</th>
+          </tr>
+          <tr>
+            <td><span class="badge" style="color:var(--amber)">Max 6</span></td>
+            <td><b>Only argue one side</b> — biggest trap!</td>
+          </tr>
+          <tr>
+            <td><span class="badge" style="color:var(--amber)">Max 3</span></td>
+            <td>Any single developed argument</td>
+          </tr>
+        </table>
+
+        <div class="traps">
+          <div class="trap-label">Watch out</div>
+          <ul>
+            <li><b>Not the same as Options</b> — you do NOT recommend. You argue both sides.</li>
+            <li>Start: "The view is supported because..."</li>
+            <li>Then: "However, the view is opposed because..."</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /grid -->
+
+  <!-- PHRASES STRIP -->
+  <div class="phrases">
+    <div class="phrases-label">Key phrases to use in every answer</div>
+    <div class="phrase-row">
+      <span class="phrase start">Overall, ...</span>
+      <span class="phrase start">This shows that ...</span>
+      <span class="phrase start">This suggests that ...</span>
+      <span class="phrase start">This indicates that ...</span>
+      <span class="phrase link">Source 1 shows that ...</span>
+      <span class="phrase link">According to Source 2, ...</span>
+      <span class="phrase link">This is supported by Source 3, which states ...</span>
+      <span class="phrase eval">Therefore, ...</span>
+      <span class="phrase eval">This demonstrates that ...</span>
+      <span class="phrase eval">In contrast, Source 2 shows ...</span>
+      <span class="phrase eval">However, the view is opposed because ...</span>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+</body>
+</html>
