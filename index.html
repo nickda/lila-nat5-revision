@@ -1761,13 +1761,14 @@
         // Per-topic weakness overrides: topics flagged here get a priority boost
         // regardless of their confidence rating
         const TOPIC_WEAKNESSES = {
-            "Environmental Science": ["Atmosphere", "Biosphere"]
+            "Environmental Science": ["Atmosphere", "Biosphere"],
+            "Modern Studies": ["Skills-Conclusions", "Skills-Options", "Skills-Support-Oppose", "First-Minister-Powers", "Terrorism-Causes-Military-Responses", "Terrorism-International-Responses"]
         };
 
         // Daily drill subjects: these get a dedicated section in Today view
         const DAILY_DRILL_SUBJECTS = [
-            { subject: "English", label: "English (CR)", icon: "📖", minutes: 25, instruction: "Critical Reading Section 2 — genre rule, features lists, top-band keywords" },
-            { subject: "English", label: "English (RUAE)", icon: "✏️", minutes: 15, instruction: "RUAE Word Choice + CR Section 1 — kill stale weak cards" }
+            { subject: "Modern Studies", label: "MS Source Skills", icon: "🗂️", minutes: 20, instruction: "Source questions: Conclusions (4×3-mark), Options (justify + reject), Support/Oppose (both sides). These are 30/80 marks." },
+            { subject: "Modern Studies", label: "MS Knowledge", icon: "🏛️", minutes: 20, instruction: "KU topics: First Minister, MSP roles, terrorism causes/responses, social inequality private/voluntary sector." }
         ];
 
         // Firebase config (populated during setup)
